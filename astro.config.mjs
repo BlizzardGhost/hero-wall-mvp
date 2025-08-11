@@ -1,8 +1,7 @@
 import { defineConfig } from 'astro/config';
-import vercel from '@astrojs/vercel/serverless';
+import vercel from '@astrojs/vercel/static'; // Astro 4 uses entry exports
 
 export default defineConfig({
-  output: 'server',
+  output: 'static',
   adapter: vercel(),
-  site: 'https://example.com'
 });

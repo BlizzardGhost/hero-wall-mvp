@@ -1,7 +1,4 @@
 {
-  "functions": {
-    "api/**/*": {
-      "maxDuration": 10
-    }
-  }
+  "buildCommand": "astro build",
+  "outputDirectory": "dist"
 }
