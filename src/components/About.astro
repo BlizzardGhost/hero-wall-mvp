@@ -1,0 +1,135 @@
+<section id="about" class="section">
+  <div class="inner">
+    <div class="banner">Character Profile</div>
+    <div class="panel" style="margin-top:12px">
+      <div class="charcard">
+        <!-- Portrait -->
+        <div class="holo" style="grid-area:pic">
+          <img src="/public/img/boris-portrait.png" alt="Boris hologram portrait" loading="lazy" />
+        </div>
+
+        <!-- Nameplate -->
+        <div class="cc-nameplate">
+          <div>Boris Quijano — Digital Strategist &amp; Narrative Architect</div>
+        </div>
+
+        <!-- Stats -->
+        <div class="cc-stats">
+          <div class="cc-row">
+            <span class="iconify" data-icon="game-icons:crown"></span>
+            <div><div class="label">Class</div><div class="text">Narrative Architect</div></div>
+          </div>
+          <div class="cc-row">
+            <span class="iconify" data-icon="mdi:robot-happy-outline"></span>
+            <div><div class="label">Spec</div><div class="text">Technomancy (AI + Systems)</div></div>
+          </div>
+          <div class="cc-row">
+            <span class="iconify" data-icon="mdi:handshake-outline"></span>
+            <div><div class="label">Alignment</div><div class="text">Chaotic Good</div></div>
+          </div>
+          <div class="cc-row">
+            <span class="iconify" data-icon="mdi:atom-variant"></span>
+            <div><div class="label">Era</div><div class="text">Graphene Age (4th Life)</div></div>
+          </div>
+          <div class="cc-row">
+            <span class="iconify" data-icon="game-icons:upgrade"></span>
+            <div><div class="label">Experience</div><div class="text">15+ years — end‑to‑end IT, marketing, design</div></div>
+          </div>
+          <div class="cc-row">
+            <span class="iconify" data-icon="mdi:translate-variant"></span>
+            <div><div class="label">Language</div><div class="text">EN / ES (bicultural: US &amp; LATAM)</div></div>
+          </div>
+        </div>
+
+        <!-- Loadout -->
+        <div class="loadout-wrap">
+          <div class="loadout-belt">
+            <div class="loadout-bar" id="loadoutBar">
+              <span class="loadout-chip" data-tip="Design Systems"><span class="iconify" data-icon="simple-icons:figma"></span>Figma</span>
+              <span class="loadout-chip" data-tip="Docs & Ops"><span class="iconify" data-icon="simple-icons:notion"></span>Notion</span>
+              <span class="loadout-chip" data-tip="Backend Runtime"><span class="iconify" data-icon="mdi:nodejs"></span>Node</span>
+              <span class="loadout-chip" data-tip="Fast Runtime & Bundler"><span class="iconify" data-icon="simple-icons:bun"></span>Bun</span>
+              <span class="loadout-chip" data-tip="Rapid UI"><span class="iconify" data-icon="mdi:tailwind"></span>Tailwind</span>
+              <span class="loadout-chip" data-tip="No‑Code Automations"><span class="iconify" data-icon="simple-icons:zap"></span>Zapier</span>
+              <span class="loadout-chip" data-tip="API Workflows"><span class="iconify" data-icon="mdi:pipe-disconnected"></span>Pipedream</span>
+              <span class="loadout-chip" data-tip="Islands & Speed"><span class="iconify" data-icon="simple-icons:astro"></span>Astro</span>
+              <span class="loadout-chip" data-tip="Edge Deploys"><span class="iconify" data-icon="simple-icons:vercel"></span>Vercel</span>
+              <span class="loadout-chip" data-tip="CDN & Security"><span class="iconify" data-icon="simple-icons:cloudflare"></span>Cloudflare</span>
+              <span class="loadout-chip" data-tip="Text→Video"><span class="iconify" data-icon="mdi:movie-open-outline"></span>Sora</span>
+              <span class="loadout-chip" data-tip="Image Gen"><span class="iconify" data-icon="mdi:image-auto-adjust"></span>Genspark</span>
+              <span class="loadout-chip rare" id="chipChatGPT" data-tip="Fear is for NPCs — Level 13 unlocked.">
+                <span class="iconify" data-icon="mdi:chat-processing-outline"></span>ChatGPT
+              </span>
+            </div>
+
+            <!-- arrows bound to the belt only -->
+            <div class="loadout-nav" aria-hidden="true">
+              <button class="nav-btn left"  id="loadoutPrev" aria-label="Scroll loadout left">
+                <span class="iconify" data-icon="mdi:chevron-left"></span>
+              </button>
+              <button class="nav-btn right" id="loadoutNext" aria-label="Scroll loadout right">
+                <span class="iconify" data-icon="mdi:chevron-right"></span>
+              </button>
+            </div>
+
+            <!-- edge fades -->
+            <div class="fade left"></div>
+            <div class="fade right"></div>
+          </div>
+
+          <div id="loadoutEaster" class="easter-msg">
+            <span class="hint">Hint:</span> hover the last chip for a surprise…
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Easter egg (long hover or click)
+    const chip = document.getElementById('chipChatGPT');
+    const msg  = document.getElementById('loadoutEaster');
+    let t;
+    const LINES = [
+      "RASS is watching you… calculating curiosity score.",
+      "Ms. Devil will punish you for being too curious… proceed.",
+      "Siege Mode: curiosity detected. Bonus XP awarded.",
+      "You found Level 13. Most mortals stop at 12."
+    ];
+    const randLine = () => LINES[Math.floor(Math.random()*LINES.length)];
+    function openEgg(){
+      msg.classList.add('show');
+      if (window.HeroWallModal?.open) {
+        window.HeroWallModal.open({ title: "Secret Loadout: Level 13", html: `<p>${randLine()}</p>` });
+      } else {
+        msg.innerHTML = `<span class="hint">Secret:</span> ${randLine()}`;
+      }
+    }
+    chip?.addEventListener('mouseenter', ()=>{ t = setTimeout(openEgg, 1200); });
+    chip?.addEventListener('mouseleave', ()=>{ clearTimeout(t); });
+    chip?.addEventListener('click', openEgg);
+
+    // Inventory arrows (bound to belt height, not the hint)
+    const bar  = document.getElementById('loadoutBar');
+    const prev = document.getElementById('loadoutPrev');
+    const next = document.getElementById('loadoutNext');
+
+    function updateArrows(){
+      if(!bar) return;
+      const max = bar.scrollWidth - bar.clientWidth - 1;
+      prev?.classList.toggle('disabled', bar.scrollLeft <= 0);
+      next?.classList.toggle('disabled', bar.scrollLeft >= max);
+    }
+    function step(dir){
+      if(!bar) return;
+      const chip = bar.querySelector('.loadout-chip');
+      const w = chip ? (chip.offsetWidth + 10) : 140; // gap ≈ 10
+      bar.scrollBy({ left: dir * (w * 3), behavior: 'smooth' });
+      setTimeout(updateArrows, 420);
+    }
+    prev?.addEventListener('click', ()=>step(-1));
+    next?.addEventListener('click', ()=>step(1));
+    bar?.addEventListener('scroll', updateArrows);
+    window.addEventListener('load', updateArrows);
+  </script>
+</section>

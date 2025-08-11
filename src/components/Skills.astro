@@ -1,0 +1,62 @@
+---
+const skills = [
+  { label: "Web Architecture (Astro/Vercel)", lvl: 95, icon: "simple-icons:astro" },
+  { label: "AI & Automation (Agents/Workflows)", lvl: 92, icon: "mdi:robot-happy-outline" },
+  { label: "Performance & Ops", lvl: 88, icon: "mdi:speedometer" },
+  { label: "WordPress → Astro Migrations", lvl: 90, icon: "mdi:swap-horizontal" },
+  { label: "UX Writing & Narrative Design", lvl: 93, icon: "mdi:script-text-outline" },
+  { label: "Marketing Systems", lvl: 86, icon: "mdi:chart-box-outline" },
+];
+---
+<section id="skills" class="section">
+  <div class="inner">
+    <div class="banner">Skills</div>
+
+    <div class="panel skills-panel" style="margin-top:12px">
+     <div class="skills-grid">
+  {skills.map((s) => (
+    <div class="skill">
+      <div class="skill-head">
+        <span class="iconify" data-icon={s.icon} aria-hidden="true"></span>
+        <span class="skill-name">{s.label}</span>
+        <span class="skill-lvl" data-tip={`${s.lvl}% mastery`}>{s.lvl}%</span>
+      </div>
+
+      {/* the bar (needed for animation + scan) */}
+      <div class="meter" data-lvl={s.lvl}>
+        <span aria-hidden="true"></span>
+      </div>
+    </div>
+  ))}
+</div>
+    </div>
+  </div>
+
+  <script is:inline>
+  // Animate meters when visible + enable inner scan
+  const meters = [...document.querySelectorAll('#skills .meter')];
+
+  // start collapsed so the transition is visible
+  meters.forEach(m => {
+    const bar = m.querySelector('span');
+    if (bar) bar.style.width = '0%';
+  });
+
+  const io = new IntersectionObserver((entries, obs) => {
+    entries.forEach(({isIntersecting, target}) => {
+      if (!isIntersecting) return;
+      const lvl = Number(target.dataset.lvl || 0);
+      const bar = target.querySelector('span');
+      if (!bar) return;
+
+      // force a reflow so transition always fires
+      void bar.offsetWidth;
+      bar.style.width = lvl + '%';
+      target.classList.add('lit');      // turns on scan overlay
+      obs.unobserve(target);
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -15% 0px' });
+
+  meters.forEach(m => io.observe(m));
+</script>
+</section>

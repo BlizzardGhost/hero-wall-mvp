@@ -1,0 +1,14 @@
+---
+const { infusionUrl, kidslabUrl, email } = Astro.props;
+---
+<footer class="container">
+  <div class="row" style="justify-content:space-between">
+    <div>© {new Date().getFullYear()} Boris Quijano — Hero Wall</div>
+    <div class="row">
+      <a class="glow" href={infusionUrl} style="margin-right:12px">Infusion 2.0</a>
+      <a class="glow" href={kidslabUrl} style="margin-right:12px">Kidslab</a>
+      <a class="glow" href={`mailto:${email}`}>Email</a>
+    </div>
+  </div>
+  <div class="subtitle">Built by Raz &amp; Ms. Devil, Directed by Boris. (Achievement not unlocked: VP of Endless Meetings)</div>
+</footer>

@@ -1,0 +1,53 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import Hero from "../components/Hero.astro";
+import About from "../components/About.astro";
+import Skills from "../components/Skills.astro";
+import Work from "../components/Work.astro";
+import CTA from "../components/CTA.astro";
+import Footer from "../components/Footer.astro";
+import Timeline from "../components/Timeline.astro";
+import BadgeWall from "../components/BadgeWall.astro";
+
+const LINKS = [
+  { title:"Infusion 2.0 Website", href:"https://infusion.site", desc:"Agency & corporate-facing offer."},
+  { title:"Kidslab.lat", href:"https://kidslab.lat", desc:"Educational brand for kids and parents."},
+  { title:"Special Projects", href:"#", desc:"Side quests & collaborations."},
+];
+const EMAIL = "borisqj+hero@proton.me";
+
+// Placeholder badges (swap with Sora art later)
+const ERA_BADGES = {
+  stone:  "/public/badges/stone.png",
+  steel:  "/public/badges/steel.png",
+  crystal:"/public/badges/crystal.png",
+  graphene:"/public/badges/graphene.png",
+};
+
+// Timeline data (from your brief)
+const ERAS = [
+  { name:"Apprentice Era — Stone Age", desc:"Learned the foundations of IT, design, and web dev.", burn:"Corporate collapse & skill reset.", badge: ERA_BADGES.stone },
+  { name:"Hero Reborn Era — Steel Age", desc:"Built Infusion 1.0, delivered first US client projects.", burn:"Burnout from one-man-band overload.", badge: ERA_BADGES.steel },
+  { name:"Wandering Era — Crystal Age", desc:"Pursued digital nomad life, explored Belize, Colombia.", burn:"Personal and relationship implosion.", badge: ERA_BADGES.crystal },
+  { name:"Graphene Era — Techno-Organic Mastery (Current)", desc:"Launched Infusion 2.0 with W.A.R.P. Implemented RASS & Ms. Devil protocols. Gamification layer active — Siege Mode engaged.", badge: ERA_BADGES.graphene },
+];
+
+// Badge Wall data
+const BADGES = [
+  { name:"Siege Mode Veteran", caption:"Survived 3 burns, rebuilt system from scratch.", icon:"/public/badges/siege.png" },
+  { name:"Technomancer", caption:"AI-assisted creative execution in record time.", icon:"/public/badges/technomancer.png" },
+  { name:"Digital Nomad", caption:"Built & delivered for clients in multiple countries.", icon:"/public/badges/nomad.png" },
+  { name:"Narrative Architect", caption:"Integrated storytelling into business solutions.", icon:"/public/badges/narrative.png" },
+  { name:"One-Man Army", caption:"Mastered full-stack marketing & web architecture.", icon:"/public/badges/onearmy.png" },
+];
+---
+<BaseLayout title="Boris Quijano — Digital Strategist & Narrative Architect">
+  <Hero />
+  <About />
+  <Skills />
+  <Timeline eras={ERAS} />
+  <BadgeWall badges={BADGES} locked={4} />
+  <Work links={LINKS} />
+  <CTA href={`mailto:${EMAIL}`} />
+  <Footer infusionUrl="https://infusion.site" kidslabUrl="https://kidslab.lat" email={EMAIL} />
+</BaseLayout>

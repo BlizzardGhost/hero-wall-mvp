@@ -1,0 +1,207 @@
+---
+// Timeline.astro — fixed, self‑contained
+
+const eras = [
+  {
+    id: 'era1',
+    icon: '/public/img/era-stone.png',
+    title: 'App Apprentice — Stone Age',
+    years: '2010–2013',
+    note: 'Foundations of IT, design, and web.',
+    burn: 'Corporate collapse & skill reset.',
+  },
+  {
+    id: 'era2',
+    icon: '/public/img/era-steel.png',
+    title: 'Hero Reborn — Steel Age',
+    years: '2014–2018',
+    note: 'Infusion 1.0; first US client projects.',
+    burn: 'Burnout from one‑man‑band overload.',
+  },
+  {
+    id: 'era3',
+    icon: '/public/img/era-crystal.png',
+    title: 'Wandering — Crystal Age',
+    years: '2019–2022',
+    note: 'Digital nomad life; LATAM expansion.',
+    burn: 'Personal & relationship implosion.',
+  },
+  {
+    id: 'era4',
+    icon: '/public/img/era-graphene.png',
+    title: 'Graphene Age — Current',
+    years: '2023–now',
+    note: 'Infusion 2.0 with AI systems.',
+    burn: 'Siege Mode proficiency unlocked.',
+  },
+];
+---
+
+<section id="timeline" class="section">
+  <div class="inner">
+    <div class="banner">Hero Journey Timeline</div>
+
+    <div class="panel timeline-wrap" style="margin-top:12px">
+      <!-- glow rail -->
+      <div class="journey-rail" aria-hidden="true"></div>
+
+      <!-- arrows (inside the panel) -->
+      <button class="tl-btn tl-left" aria-label="Scroll left">
+        <span class="iconify" data-icon="mdi:chevron-left"></span>
+      </button>
+
+      <!-- scroller -->
+      <div class="timeline-scroller" id="timelineScroller">
+        <div class="timeline" id="timelineBar">
+          {eras.map((e, i) => (
+            <article
+              class="node"
+              data-title={e.title}
+              data-html={`<p><strong>${e.years}</strong> — ${e.note}</p><p class="burn">Burn: ${e.burn}</p>`}
+            >
+              <div class="pin" style={`--i:${i}`}></div>
+              <div class="card">
+                <div class="head">
+                  <img src={e.icon} width="48" height="48" alt="" loading="lazy" />
+                  <h3>{e.title}</h3>
+                </div>
+                <div class="note">{e.years} — {e.note}</div>
+                <div class="burn">Burn: {e.burn}</div>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+
+      <button class="tl-btn tl-right" aria-label="Scroll right">
+        <span class="iconify" data-icon="mdi:chevron-right"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- modal open on node click -->
+  <script is:inline>
+    document.querySelector('#timeline')?.addEventListener('click', (ev) => {
+      const node = ev.target.closest('.node');
+      if (!node) return;
+      window.HeroWallModal?.open?.({
+        title: node.dataset.title || 'Era',
+        html: node.dataset.html || '',
+      });
+    });
+  </script>
+
+  <!-- arrows logic (belt scroller) -->
+  <script is:inline>
+    (function () {
+      const wrap = document.querySelector('#timeline .timeline-wrap');
+      const scroller = wrap?.querySelector('#timelineScroller');
+      const leftBtn  = wrap?.querySelector('.tl-left');
+      const rightBtn = wrap?.querySelector('.tl-right');
+      if (!wrap || !scroller || !leftBtn || !rightBtn) return;
+
+      const STEP = () => Math.min(420, Math.round(scroller.clientWidth * 0.6));
+
+      function updateButtons() {
+        const max = scroller.scrollWidth - scroller.clientWidth - 1;
+        leftBtn.disabled  = scroller.scrollLeft <= 0;
+        rightBtn.disabled = scroller.scrollLeft >= max;
+      }
+
+      function nudge(dir) {
+        scroller.scrollBy({ left: dir * STEP(), behavior: 'smooth' });
+        setTimeout(updateButtons, 420);
+      }
+
+      leftBtn.addEventListener('click', () => nudge(-1));
+      rightBtn.addEventListener('click', () => nudge(1));
+      scroller.addEventListener('scroll', updateButtons);
+      window.addEventListener('load', updateButtons);
+      window.addEventListener('resize', updateButtons);
+      updateButtons();
+    })();
+  </script>
+
+  <style>
+    /* wrapper */
+    .timeline-wrap{
+      position:relative;
+      overflow:hidden;
+      padding: 18px 42px; /* space for arrows */
+    }
+
+    /* glowing rail behind the pins */
+    .journey-rail{
+      position:absolute; left:12px; right:12px; top:36px; height:4px;
+      background:linear-gradient(90deg, rgba(56,199,231,.6), rgba(124,236,255,.6));
+      box-shadow:0 0 12px rgba(56,199,231,.7);
+      pointer-events:none;
+    }
+
+    /* scroller */
+    .timeline-scroller{
+      overflow-x:auto;
+      -webkit-overflow-scrolling:touch;
+      scroll-snap-type:x proximity;
+    }
+    .timeline{
+      display:flex; gap:18px; padding:10px 0 6px;
+    }
+
+    /* node/card */
+    .node{
+      min-width:320px; max-width:360px;
+      position:relative;
+      scroll-snap-align:start;
+    }
+    .node .pin{
+      position:absolute; top:-6px; left:10px;
+      width:18px; height:18px; border-radius:50%;
+      background:#38C7E7; border:2px solid #000;
+      box-shadow:0 0 10px rgba(56,199,231,.9);
+    }
+    .node .card{
+      margin-top:14px; margin-left:32px; padding:12px;
+      background:rgba(28,59,84,.18);
+      border:2px solid rgba(56,199,231,.35);
+      box-shadow:0 0 0 3px rgba(0,0,0,.55) inset;
+    }
+    .node .head{ display:flex; align-items:center; gap:10px; }
+    .node .head img{ width:48px; height:48px; image-rendering:pixelated }
+    .node h3{
+      margin:0; font-family:'Press Start 2P', system-ui;
+      font-size:12px; line-height:1.3; white-space:normal;
+    }
+    .node .note, .node .burn{
+      margin-top:8px; font-size:14px; line-height:1.4; white-space:normal;
+      word-break:break-word; overflow-wrap:anywhere;
+    }
+    .node .burn{ color:#ffb0b0; }
+
+    /* arrows */
+    .tl-btn{
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:36px; height:36px;
+      display:grid; place-items:center;
+      border:2px solid rgba(56,199,231,.45);
+      background:rgba(28,59,84,.9);
+      box-shadow:0 0 0 3px rgba(0,0,0,.6) inset, 0 4px 0 #000;
+      color:#fff; cursor:pointer;
+    }
+    .tl-left{  left:8px;  }
+    .tl-right{ right:8px; }
+    .tl-btn .iconify{ font-size:22px; color:#38C7E7; filter:drop-shadow(0 0 6px rgba(56,199,231,.6)); }
+    .tl-btn:hover{ filter:brightness(1.08); }
+    .tl-btn:disabled{ opacity:.35; cursor:default; }
+
+    /* hide arrows on touch devices (swipe) */
+    @media (pointer:coarse){
+      .tl-btn{ display:none; }
+      .timeline-wrap{ padding-left:12px; padding-right:12px; }
+    }
+
+    @media (max-width:900px){
+      .node{ min-width:82%; max-width:82%; }
+    }
+  </style>
+</section>

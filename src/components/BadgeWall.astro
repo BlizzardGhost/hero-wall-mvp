@@ -1,0 +1,53 @@
+---
+const { badges = [], locked = 4 } = Astro.props;
+---
+<section id="badges" class="section">
+  <div class="inner">
+    <div class="banner">Badge Wall</div>
+    <div class="panel" style="margin-top:12px">
+      <div class="badge-grid">
+        {badges.map((b)=> (
+          <button class="badge" type="button"
+  data-title={b.name}
+  data-caption={b.caption}>
+  <img src={b.icon} alt={b.name} />
+  <div class="name">{b.name}</div>
+  <div class="cap">{b.caption}</div>
+</button>
+        ))}
+        {Array.from({length: Math.max(0, locked)}).map((_,i)=> (
+          <div class="badge locked">
+            <img src="/public/img/lock.png" alt="Locked" />
+            <div class="name">Locked</div>
+            <div class="cap">{i===0 ? "VP of Endless Meetings — pass." : "Incoming badge"}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Find this section's grid robustly
+  const section = document.currentScript.closest('section');
+  const grid = section?.querySelector('.badge-grid');
+
+  function openWithModal(payload){
+    if (window.HeroWallModal && window.HeroWallModal.open) {
+      window.HeroWallModal.open(payload);
+    } else {
+      // Wait until the layout announces the modal is ready, then open once
+      document.addEventListener('herowall:modal-ready', () => {
+        window.HeroWallModal?.open(payload);
+      }, { once: true });
+    }
+  }
+
+  grid?.addEventListener('click', (e)=>{
+    const btn = e.target.closest('button.badge');
+    if(!btn) return;
+    const title = btn.dataset.title || 'Badge';
+    const caption = btn.dataset.caption || btn.dataset.html || '';
+    openWithModal({ title, html: `<p>${caption}</p>` });
+  });
+</script>
+</section>

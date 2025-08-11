@@ -1,0 +1,19 @@
+---
+const LINKS = Astro.props.links;
+---
+<section id="work" class="section">
+  <div class="inner">
+    <div class="banner">Relics (Work)</div>
+    <div class="panel" style="margin-top:12px">
+      <p class="subtitle">Every quest leaves a relic.</p>
+      <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr))">
+        {LINKS.map((l)=> (
+          <a class="panel glow" style="background:rgba(56,199,231,.05); border-color:rgba(56,199,231,.3)" href={l.href} target="_blank" rel="noopener">
+            <div style="font-family:'Press Start 2P'; font-size:12px">{l.title}</div>
+            <div class="subtitle">{l.desc}</div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

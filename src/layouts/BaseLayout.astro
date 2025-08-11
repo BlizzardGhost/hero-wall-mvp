@@ -1,0 +1,156 @@
+---
+const {
+  title = "Boris Quijano — Hero Wall",
+  description = "Digital Strategist & Narrative Architect."
+} = Astro.props;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://code.iconify.design/3/3.1.1/iconify.min.js" defer></script>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 fill=%22%231C3B54%22/><path d=%22M32 8l8 10h-16zM24 40h6v10h-6zM34 40h6v10h-6z%22 fill=%22%23FFD166%22/></svg>">
+    <meta property="og:title" content="Boris Quijano — Hero Wall">
+    <meta property="og:description" content="Your Digital Hero for AI‑Powered Web Systems.">
+    <meta property="og:image" content="/public/img/hero.png">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet">    <link rel="stylesheet" href="/src/styles/global.css" />
+    <link rel="preload" href="/public/img/hero.png" as="image">
+  </head>
+  <body>
+    <!-- Parallax world -->
+    <div class="parallax" aria-hidden="true">
+      <div class="layer mountains"></div>
+      <div class="layer clouds"></div>
+    </div>
+
+    <!-- Header -->
+    <header id="hdr">
+      <div class="container row" style="justify-content:space-between">
+        <div style="font-family:'Press Start 2P'; font-size:12px">HERO WALL</div>
+        <nav>
+          <a href="#work">WORK</a>
+          <a href="#about">ABOUT</a>
+          <a href="#skills">SKILLS</a>
+          <a href="#contact">CONTACT</a>
+        </nav>
+      </div>
+    </header>
+
+    <!-- Page content -->
+    <slot />
+
+    <!-- Pixel Modal -->
+<div id="modalOverlay" class="modal-overlay" aria-hidden="true">
+  <div id="modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <div id="modalTitle">Message</div>
+    </div>
+    <div id="modalBody" class="modal-body"></div>
+    <div class="modal-actions">
+      <button class="modal-close" id="modalOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+    <!-- Scripts -->
+    <script>
+  // ----- header + parallax -----
+  const headerEl = document.getElementById('hdr');
+  function onScroll(){
+    if (window.scrollY > 10) headerEl.classList.add('scrolled');
+    else headerEl.classList.remove('scrolled');
+    document.documentElement.style.setProperty('--scroll', String(window.scrollY));
+  }
+  document.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  // ===== Pixel Modal with rotating jokes =====
+  if (!window.__HeroWallWired__) {
+    window.__HeroWallWired__ = true;
+
+    const overlay = document.getElementById('modalOverlay');
+    const modal   = document.getElementById('modal');
+    const bodyEl  = document.getElementById('modalBody');
+    const titleEl = document.getElementById('modalTitle');
+
+    // Add/adjust jokes here (HTML allowed; keep it classy-snarky)
+    const JOKES = [
+      "Corporate ladder tip: it’s just a treadmill with better PR.",
+      "Now hiring: <em>Senior Meeting Attendee</em>. Must bring own coffee.",
+      "KPIs reached: 120% compliance, 0% creativity. Perfect.",
+      "Our culture is ‘like a family.’ Cool—who’s doing the dishes?",
+      "Promotion path: do more of the same, but in a different room.",
+      "Dress code: business casual. Ideas code: strictly casual.",
+      "Stand‑up meeting: we stood, nothing stood out.",
+      "New policy: innovate exactly as approved last quarter.",
+      "FYI: The hamster from the wheel has requested PTO.",
+      "Reminder: If it needs a 14‑slide pre‑read, it’s not a decision—it’s a ritual."
+    ];
+    let lastJokeIndex = -1;
+    const nextJoke = () => {
+      let i; do { i = Math.floor(Math.random() * JOKES.length); } while (i === lastJokeIndex && JOKES.length > 1);
+      lastJokeIndex = i; return JOKES[i];
+    };
+
+    let lastFocus = null;
+
+    function openModal({ title = "Message", html = "" } = {}){
+      lastFocus = document.activeElement;
+      titleEl.textContent = title;
+
+      const joke = `<p class="subtitle" style="margin:12px 0 0">${nextJoke()}</p>`;
+      bodyEl.innerHTML = html ? `${html}${joke}` : joke;
+
+      overlay.classList.add('active');
+      overlay.setAttribute('aria-hidden','false');
+      document.body.classList.add('no-scroll');
+      (modal.querySelector('.modal-close') || modal).focus();
+    }
+
+    function closeModal(){
+      overlay.classList.remove('active');
+      overlay.setAttribute('aria-hidden','true');
+      document.body.classList.remove('no-scroll');
+      lastFocus && lastFocus.focus?.();
+    }
+
+    // Inside clicks don't bubble; OK closes
+    modal.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if (e.target.closest('.modal-close')) closeModal();
+    }, true);
+
+    // ESC closes
+    document.addEventListener('keydown', (e)=> { if (e.key === 'Escape') closeModal(); });
+
+    // Easter egg -> modal (now with rotating jokes)
+    document.addEventListener('keydown', (e) => {
+      if (e.key.toLowerCase() === 'r') {
+        openModal({
+          title: "Siege Mode",
+          html: "<p>Built by <strong>Raz</strong> &amp; <strong>Ms. Devil</strong>, Directed by <strong>Boris</strong>.</p>"
+        });
+      }
+    });
+
+    // Expose globally for badges, etc.
+    window.HeroWallModal = { open: openModal, close: closeModal };
+  }
+
+  // Global badge click handler (works no matter when components load)
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('button.badge');
+  if (!btn) return;
+  const title = btn.dataset.title || 'Badge';
+  const caption = btn.dataset.caption || btn.dataset.html || '';
+  window.HeroWallModal.open({ title, html: caption ? `<p>${caption}</p>` : "" });
+});
+</script>
+  </body>
+</html>
