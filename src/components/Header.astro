@@ -1,0 +1,55 @@
+---
+const LINKS = [
+  { href: "#work",   label: "WORK" },
+  { href: "#about",  label: "ABOUT" },
+  { href: "#skills", label: "SKILLS" },
+  { href: "#contact",label: "CONTACT" },
+];
+---
+
+<header class="hud px-hud" id="hdr" role="navigation">
+  <div class="hud-inner">
+    <!-- Brand / Title -->
+    <a href="/" class="brand">
+      <span class="bolt"></span>
+      <span class="brand-text">HERO&nbsp;WALL</span>
+      <span class="bolt"></span>
+    </a>
+
+    <!-- Nav chips -->
+    <nav class="nav">
+      {LINKS.map(l => (
+        <a class="nav-chip" href={l.href}>{l.label}</a>
+      ))}
+      <span class="rail"></span>
+    </nav>
+
+    <!-- Status HUD (tiny, fun, optional) -->
+    <div class="status">
+      <span class="led led-cyan" aria-hidden="true"></span>
+      <span class="mini">XP</span><span class="bar"><i style="width:72%"></i></span>
+      <span class="mini">HP</span><span class="bar"><i style="width:88%"></i></span>
+    </div>
+  </div>
+
+  <!-- Decorative FX -->
+  <span class="scanlines" aria-hidden="true"></span>
+  <span class="shine" aria-hidden="true"></span>
+</header>
+
+<script is:inline>
+  // Scroll state + active link
+  const h = document.querySelector('header.px-hud');
+  const onScroll = () => h?.classList.toggle('scrolled', window.scrollY > 6);
+  window.addEventListener('scroll', onScroll, { passive:true }); onScroll();
+
+  // Mark active in-page section while scrolling
+  const chips = [...document.querySelectorAll('.nav-chip')];
+  const secs  = chips.map(c => document.querySelector(c.getAttribute('href'))).filter(Boolean);
+  const io = new IntersectionObserver(entries => {
+    const visible = entries.filter(e => e.isIntersecting).sort((a,b)=> b.intersectionRatio - a.intersectionRatio)[0];
+    if (!visible) return;
+    chips.forEach(c => c.classList.toggle('active', c.getAttribute('href') === `#${visible.target.id}`));
+  }, { rootMargin: "-30% 0px -60% 0px", threshold:[0, .2, .5, .8] });
+  secs.forEach(s => io.observe(s));
+</script>

@@ -1,0 +1,34 @@
+---
+import { relics } from '../data/relics';
+---
+
+<section id="relics" class="section">
+  <div class="inner">
+    <div class="banner">Relics from the Road</div>
+    <p class="relic-lede">Every quest brings a relic — snapshots from shipped worlds.</p>
+
+    <div class="panel">
+      <div class="relics-grid">
+        {relics.map((r) => (
+          r.href ? (
+            <a class="relic" href={r.href} target="_blank" rel="noopener noreferrer">
+              <div class="relic-holo">
+                <img src={r.img} alt={`${r.title} snapshot`} loading="lazy" />
+                <i class="scan" aria-hidden="true"></i>
+              </div>
+              <h3 class="relic-title">{r.title}</h3>
+            </a>
+          ) : (
+            <div class="relic">
+              <div class="relic-holo">
+                <img src={r.img} alt={`${r.title} snapshot`} loading="lazy" />
+                <i class="scan" aria-hidden="true"></i>
+              </div>
+              <h3 class="relic-title">{r.title}</h3>
+            </div>
+          )
+        ))}
+      </div>
+    </div>
+  </div>
+</section>

@@ -1,7 +1,9 @@
+// astro.config.mjs
 import { defineConfig } from 'astro/config';
-import vercel from '@astrojs/vercel/static'; // Astro 4 uses this entry for static
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
-  output: 'static',
-  adapter: vercel(),
+  output: 'server',                // required for Vercel adapter
+  adapter: vercel({ runtime: 'edge' }),
+  image: { service: { entry: 'astro/assets/services/sharp' } }
 });
