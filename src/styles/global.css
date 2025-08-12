@@ -1021,3 +1021,68 @@ html:not([data-lore="1"]) .badge-card .lore { display:none; }
 
 /* Ensure the scan element renders (your class exists already) */
 .relic-holo .scan{ content:""; }
+
+/* --- Character Profile: solid mobile layout --- */
+@media (max-width: 640px){
+  #about .charcard{
+    grid-template-columns: 1fr;                 /* stack */
+    grid-template-areas:
+      "pic"
+      "name"
+      "stats"
+      "badges";
+    gap: 12px;
+    align-items: start;
+  }
+
+  /* Portrait — center and scale up a bit */
+  #about .charcard .holo{
+    width: clamp(160px, 68vw, 280px);
+    height: auto;
+    aspect-ratio: 1 / 1;
+    justify-self: center;
+  }
+
+  /* Nameplate — wrap safely and center */
+  #about .cc-nameplate{
+    text-align: center;
+    font-size: 12px;
+    margin: 0;
+    padding: 6px 0;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+  }
+
+  /* Stats — single column */
+  #about .cc-stats{
+    grid-template-columns: 1fr;
+    gap: 10px 14px;
+  }
+  #about .cc-row .iconify{ font-size: 14px; margin-top: 2px; }
+
+  /* Loadout — tighten spacing */
+  #about .loadout-wrap{ margin-top: 6px; }
+  #about .loadout-belt{ padding: 6px; }
+}
+
+/* Small safety even on slightly larger phones */
+@media (max-width: 768px){
+  #about .cc-nameplate{ overflow-wrap:anywhere; word-break:break-word; }
+}
+
+/* --- kill horizontal overflow leaks (mobile) --- */
+html, body { max-width: 100%; overflow-x: hidden; }
+
+/* clip any pseudo-element wings that extend past the container */
+.section, .section .inner, .panel, .banner { max-width: 100%; overflow-x: clip; }
+@supports not (overflow: clip) {
+  .section, .section .inner, .panel, .banner { overflow-x: hidden; }
+}
+
+/* slightly shorten banner wings so they don't overhang as much */
+.banner::before { left: -6px; }
+.banner::after  { right: -6px; }
+
+@media (max-width: 420px){
+  .banner::before, .banner::after { display: none; }
+}

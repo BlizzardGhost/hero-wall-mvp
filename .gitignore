@@ -1,2 +1,23 @@
-node_modules
+cat > .gitignore << 'EOF'
+# OS cruft
 .DS_Store
+*.log
+
+# Node
+node_modules/
+npm-debug.log*
+yarn.lock
+pnpm-lock.yaml
+
+# Astro cache
+.astro/
+
+# Local env / editor
+.env*
+.vscode/
+.idea/
+
+# Build output
+dist/
+.vercel/
+EOF
