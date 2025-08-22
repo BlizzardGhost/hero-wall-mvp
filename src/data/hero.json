@@ -1,0 +1,13 @@
+{
+  "hero": { "name": "Boris", "title": "LATAM AI Sherpa", "level": 38, "protocol": "RASS v38.7.2", "category": "Explorer–Builder–Teacher" },
+  "abstract": "TEST ABSTRACT — manual edit at 4:22 PM.",
+  "badges": {
+  "active": ["Siege Survivor (July 2025)", "Kairosis Ignition (v38.7.0)"],
+  "pending": ["First Agent Badge (Aug 2025)"]
+},
+  "ops_guardrails": [
+    "Planning only in #0; Execution only in #11.",
+    "Agent edits restricted to structured JSON schema.",
+    "Base CSS and manual rollback always available."
+  ]
+}

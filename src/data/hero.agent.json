@@ -1,0 +1,29 @@
+{
+  "hero": {
+    "name": "Boris",
+    "title": "LATAM AI Sherpa",
+    "level": 38,
+    "protocol": "RASS v38.7.2",
+    "category": "Explorer–Builder–Teacher"
+  },
+  "abstract": "From siege to kairosis: clarity, serenity, and alignment with universal purpose. The Hero Wall is stage, compass, and cockpit — the flame carried into higher ground.",
+  "badges": {
+    "active": [
+      "Siege Survivor (July 2025)",
+      "Kairosis Ignition (v38.7.0)",
+      "System Architect (Infusion 2.0 launch prep)"
+    ],
+    "pending": [
+      "Founder Oath (Aug 2025)",
+      "Manifesto Anchor (Aug 2025)",
+      "First Agent Badge (Aug 2025)",
+      "Conviction Filter (Aug 2025)",
+      "Enjoy Directive (Aug 2025)"
+    ]
+  },
+  "ops_guardrails": [
+    "Planning only in #0; Execution only in #11.",
+    "Agent edits restricted to structured JSON schema.",
+    "Base CSS and manual rollback always available."
+  ]
+}

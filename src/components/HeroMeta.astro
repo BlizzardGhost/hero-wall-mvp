@@ -1,0 +1,25 @@
+---
+// src/components/HeroMeta.astro
+import data from "../data/hero.json";
+
+const hero = data?.hero ?? {};
+const abstract = data?.abstract ?? "";
+---
+
+<section id="hero-meta" class="section">
+  <div class="inner">
+    <div class="banner">Hero Status</div>
+    <div class="panel status">
+      <div><strong>Hero:</strong> {hero.name} — {hero.title}</div>
+      <div><strong>Level:</strong> {hero.level} <span class="muted">— Protocol:</span> {hero.protocol}</div>
+      <div><strong>Category:</strong> {hero.category}</div>
+      <div class="abs"><strong>Abstract:</strong> {abstract}</div>
+    </div>
+  </div>
+
+  <style>
+    .status { font-size: 14px; line-height: 1.45; }
+    .status .abs { margin-top: 6px; }
+    .status .muted { color: #9fcfe2; }
+  </style>
+</section>
