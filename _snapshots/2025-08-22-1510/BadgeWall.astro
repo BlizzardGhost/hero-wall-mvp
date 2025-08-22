@@ -1,0 +1,85 @@
+---
+import { badges as defaultBadges } from '../data/badges';
+
+// Accept badges via props or fall back to data file
+type Tier = 'ultimate' | 'prestige' | 'special' | 'locked';
+type Badge = {
+  name: string;
+  caption: string;
+  icon: string; // public/badges/singleword.png
+  xp?: number | null;
+  tier: Tier;
+  earned: boolean;
+  tooltip?: string;
+  lore?: string;
+  category: string;
+  date?: string;
+  level?: number | null;
+};
+
+const input: Badge[] = (Astro.props.badges as Badge[]) ?? defaultBadges;
+
+// Sort: Tier → Date (desc)
+const order: Record<Tier, number> = { ultimate: 0, prestige: 1, special: 2, locked: 3 };
+const sorted: Badge[] = [...input].sort((a, b) => {
+  const tierDelta = order[a.tier] - order[b.tier];
+  if (tierDelta) return tierDelta;
+  return (b.date ?? '').localeCompare(a.date ?? '');
+});
+
+const levelFrom = (b: Badge) => b.level ?? (b.name.match(/Lvl\s*(\d+)/i)?.[1] ?? "");
+---
+
+<section id="trophies" class="section">
+  <div class="inner">
+    <div class="banner">Trophies &amp; Achievements</div>
+
+    <div class="panel" style="margin-top:12px">
+      <div class="lorebar">
+        <label class="badge-lore-toggle">
+          <input id="loreToggle" type="checkbox" />
+          <span class="label">Lore Mode</span>
+        </label>
+      </div>
+
+      <div class="badge-grid">
+        {sorted.map((b) => {
+          const iconSrc = b.icon?.startsWith('/') ? b.icon : `/badges/${b.icon}`;
+          const lvl = (b.name.match(/Lvl\s*(\d+)/)?.[1]) ?? '';
+          return (
+            <div class={`badge-card ${b.earned ? `tier-${b.tier}` : 'locked'}`} data-tier={b.tier} data-tip={b.tooltip}>
+              <div class="b-head">
+                <span class={`b-tag ${b.category}`}>{(b.category ?? '').toUpperCase()}</span>
+                <span class="b-xp">{b.xp != null ? `${b.xp}XP` : '???'}</span>
+              </div>
+              <h4 class="b-title">{b.name}</h4>
+              <div class="b-frame" data-tier={b.tier} data-lvl={lvl}>
+                <img src={iconSrc} alt="" loading="lazy" />
+                <i class="tier-glow" aria-hidden="true"></i>
+              </div>
+              <p class="b-cap">{b.caption}</p>
+              {b.lore && <div class="lore" aria-hidden="true">{b.lore}</div>}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  </div>
+  <script is:inline>
+    // Lore Mode: persist & broadcast as a global attribute for robust styling.
+    (function(){
+      const KEY = 'hw.lore';
+      const box = document.getElementById('loreToggle');
+      const set = (on) => document.documentElement.setAttribute('data-lore', on ? '1' : '0');
+
+      const saved = localStorage.getItem(KEY);
+      if (saved !== null) box.checked = saved === '1';
+      set(box.checked);
+
+      box.addEventListener('change', () => {
+        set(box.checked);
+        localStorage.setItem(KEY, box.checked ? '1' : '0');
+      });
+    })();
+  </script>
+</section>
