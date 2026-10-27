@@ -1,42 +1,45 @@
-import type { APIRoute } from "astro";
-import { writeFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import type { APIRoute } from 'astro';
+import crypto from 'node:crypto';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
-export const prerender = false;
+const SECRET = (import.meta as any).env?.AGENT_SECRET ?? process.env.AGENT_SECRET;
 
-const HERO_JSON_PATH = resolve(process.cwd(), "src/data/hero.json");
+function hmacHex(body: string) {
+  return crypto.createHmac('sha256', SECRET as string).update(body).digest('hex');
+}
+function hmacB64(body: string) {
+  return crypto.createHmac('sha256', SECRET as string).update(body).digest('base64');
+}
 
-export const GET: APIRoute = async () => {
-  console.log("[agent-update] GET hit");
-  return new Response(
-    JSON.stringify({ ok: true, route: "/api/agent-update", writePath: HERO_JSON_PATH }),
-    { headers: { "content-type": "application/json" } }
-  );
-};
+export const GET: APIRoute = async () => new Response('pong');
 
 export const POST: APIRoute = async ({ request }) => {
-  console.log("[agent-update] POST hit");
+  if (!SECRET) {
+    console.error('[agent] Missing AGENT_SECRET');
+    return new Response(JSON.stringify({ error: 'Server misconfigured' }), { status: 500 });
+  }
+
+  const raw = await request.text();
+  const got = (request.headers.get('x-signature') || '').trim();
+
+  const header = got.startsWith('sha256=') ? got.slice(7) : got;
+
+  const sigHex = hmacHex(raw);
+  const sigB64 = hmacB64(raw);
+
+  if (header !== sigHex && header !== sigB64) {
+    console.warn('[agent] signature mismatch', { header, sigHex, sigB64 });
+    return new Response(JSON.stringify({ error: 'Invalid signature' }), { status: 401 });
+  }
+
   try {
-    const incoming = await request.json();
-    const required = ["hero", "abstract", "badges"];
-    const missing = required.filter((k) => !(k in incoming));
-    if (missing.length) {
-      console.log("[agent-update] missing keys:", missing);
-      return new Response(JSON.stringify({ ok: false, error: "missing keys", missing }), {
-        status: 400,
-        headers: { "content-type": "application/json" }
-      });
-    }
-    await writeFile(HERO_JSON_PATH, JSON.stringify(incoming, null, 2), "utf8");
-    console.log("[agent-update] wrote", HERO_JSON_PATH);
-    return new Response(JSON.stringify({ ok: true, updated: HERO_JSON_PATH }), {
-      headers: { "content-type": "application/json" }
-    });
+    const dest = path.resolve(process.cwd(), 'src/data/hero.json');
+    await fs.writeFile(dest, raw, 'utf8');
+
+    return new Response(JSON.stringify({ ok: true, updated: dest }), { status: 200 });
   } catch (err: any) {
-    console.error("[agent-update] ERROR:", err?.message || err);
-    return new Response(
-      typeof err?.message === "string" ? err.message : "Server error",
-      { status: 500, headers: { "content-type": "text/plain" } }
-    );
+    console.error('[agent] write error', err);
+    return new Response(JSON.stringify({ error: 'Write failed' }), { status: 500 });
   }
 };

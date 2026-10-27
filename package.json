@@ -10,5 +10,8 @@
   "devDependencies": {
     "@astrojs/vercel": "^8.2.5",
     "astro": "^5.12.9"
+  },
+  "dependencies": {
+    "openai": "^7.45.1"
   }
 }
