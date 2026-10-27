@@ -91,7 +91,11 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
               <!-- Artwork Frame with Holographic Glow -->
               <div class="poke-art-frame">
                 <div class="holo-shimmer" aria-hidden="true"></div>
-                <img src={iconSrc} alt={b.name} loading="lazy" />
+                {b.icon?.includes(':') ? (
+                  <iconify-icon icon={b.icon} class="poke-art-icon" aria-hidden="true"></iconify-icon>
+                ) : (
+                  <img src={iconSrc} alt={b.name} loading="lazy" />
+                )}
                 {lvl && <div class="poke-lvl-stamp">LVL {lvl}</div>}
               </div>
 
@@ -293,6 +297,15 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
     }
     .pokemon-card:hover .poke-art-frame img {
       transform: scale(1.08);
+    }
+    .poke-art-icon {
+      font-size: 56px;
+      color: #ffd166;
+      filter: drop-shadow(0 0 10px rgba(255, 209, 102, 0.7));
+      transition: transform 0.3s ease;
+    }
+    .pokemon-card:hover .poke-art-icon {
+      transform: scale(1.12);
     }
     .poke-lvl-stamp {
       position: absolute;
