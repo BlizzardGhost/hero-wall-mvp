@@ -1,45 +1,50 @@
 ---
-/* Timeline.astro — Iconify edition (no external images needed) */
+/* Timeline.astro — MD3 Surface & Responsive Vector Timeline */
 const eras = [
   {
     id: 'era1',
-    icon: 'pixelarticons:cube',          // Stone / building block
+    svgIcon: 'terminal',
     title: 'Stone Age — App Apprentice',
     years: '2010–2013',
-    note: 'Foundations of IT, design systems & web architecture.',
+    note: 'Foundations of IT, corporate infrastructure, and design systems.',
     burn: 'Corporate collapse & skill reset.',
+    color: '#8dafc2'
   },
   {
     id: 'era2',
-    icon: 'pixelarticons:anvil',         // Steel / forging
+    svgIcon: 'shield',
     title: 'Steel Age — Hero Reborn',
     years: '2014–2018',
-    note: 'Infusion 1.0; high-ticket US client execution.',
+    note: 'Agency scale; high-ticket US client delivery & full-stack systems.',
     burn: 'Burnout from one‑man‑band overload.',
+    color: '#38C7E7'
   },
   {
     id: 'era3',
-    icon: 'pixelarticons:crystal-ball',  // Crystal / wandering & foresight
+    svgIcon: 'compass',
     title: 'Crystal Age — Wandering Nomad',
     years: '2019–2022',
-    note: 'LATAM remote operations & international consulting.',
+    note: 'LATAM remote infrastructure & international consulting.',
     burn: 'Personal & relationship implosion.',
+    color: '#a78bfa'
   },
   {
     id: 'era4',
-    icon: 'pixelarticons:cpu',           // Graphene / systems & AI
+    svgIcon: 'chip',
     title: 'Graphene Age — Siege & AI Systems',
     years: '2023–2025',
-    note: 'Infusion 2.0; autonomous AI multi-agent pipelines.',
+    note: 'Autonomous AI multi-agent pipelines & generative media workflows.',
     burn: 'Siege Mode proficiency unlocked.',
+    color: '#ffd166'
   },
   {
     id: 'era5',
-    icon: 'pixelarticons:chess',         // Sovereign / Sanctuary & Fleet
+    svgIcon: 'citadel',
     title: 'Sovereign Age — Sanctuary & Fleet Ops',
     years: '2026–Present',
-    note: 'Embodied edge intelligence (RASS), KidsLab 3.0, and El Salvador sovereign sanctuary.',
+    note: 'Embodied edge intelligence (RASS), KidsLab 3.0, and El Salvador sanctuary.',
     burn: 'Closing the 365-day loop from Colombia.',
+    color: '#06d6a0'
   },
 ];
 ---
@@ -48,16 +53,18 @@ const eras = [
   <div class="inner">
     <div class="banner">Hero Journey Timeline</div>
 
-    <div class="panel timeline-wrap" style="margin-top:12px">
-      <!-- glow rail -->
+    <div class="panel md3-timeline-panel" style="margin-top:12px">
+      <!-- Glow rail -->
       <div class="journey-rail" aria-hidden="true"></div>
 
-      <!-- arrows (inside the panel) -->
-      <button class="tl-btn tl-left" aria-label="Scroll left">
-        <iconify-icon icon="mdi:chevron-left"></iconify-icon>
+      <!-- Scroller Navigation Buttons -->
+      <button class="tl-btn tl-left" aria-label="Scroll timeline left">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="15 18 9 12 15 6"></polyline>
+        </svg>
       </button>
 
-      <!-- scroller -->
+      <!-- Horizontal Scroller -->
       <div class="timeline-scroller" id="timelineScroller">
         <div class="timeline" id="timelineBar">
           {eras.map((e, i) => (
@@ -66,33 +73,223 @@ const eras = [
               data-title={e.title}
               data-html={`<p><strong>${e.years}</strong> — ${e.note}</p><p class="burn">Burn: ${e.burn}</p>`}
             >
-              <div class="pin" style={`--i:${i}`}></div>
-              <div class="card">
+              <div class="pin" style={`--pin-color: ${e.color}; --i:${i}`}></div>
+              <div class="card md3-era-card">
                 <div class="head">
-                  <!-- Iconify pixel icon -->
-                  <iconify-icon
-                    class="era-icon"
-                    icon={e.icon}
-                    aria-hidden="true"
-                  ></iconify-icon>
-                  <h3>{e.title}</h3>
+                  <!-- Inline Reliable Vector Era Icons -->
+                  <div class="era-icon-badge" style={`color: ${e.color}; border-color: ${e.color}40; background: ${e.color}15;`}>
+                    {e.svgIcon === 'terminal' && (
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                        <path d="M6 9l4 3-4 3M13 15h5"></path>
+                      </svg>
+                    )}
+                    {e.svgIcon === 'shield' && (
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                        <path d="M12 8v8M8 12h8"></path>
+                      </svg>
+                    )}
+                    {e.svgIcon === 'compass' && (
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor"></polygon>
+                      </svg>
+                    )}
+                    {e.svgIcon === 'chip' && (
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="4" y="4" width="16" height="16" rx="2"></rect>
+                        <rect x="9" y="9" width="6" height="6"></rect>
+                        <path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"></path>
+                      </svg>
+                    )}
+                    {e.svgIcon === 'citadel' && (
+                      <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 21h18M5 21V7l3-3 3 3v14M13 21V7l3-3 3 3v14M9 10h2M15 10h2M9 14h2M15 14h2"></path>
+                      </svg>
+                    )}
+                  </div>
+                  <div class="era-header-text">
+                    <span class="era-years" style={`color: ${e.color}`}>{e.years}</span>
+                    <h3 class="era-title">{e.title}</h3>
+                  </div>
                 </div>
-                <div class="note">{e.years} — {e.note}</div>
-                <div class="burn">Burn: {e.burn}</div>
+                <div class="note">{e.note}</div>
+                <div class="burn">
+                  <span class="burn-label">BURN:</span> {e.burn}
+                </div>
               </div>
             </article>
           ))}
         </div>
       </div>
 
-      <button class="tl-btn tl-right" aria-label="Scroll right">
-        <iconify-icon icon="mdi:chevron-right"></iconify-icon>
+      <button class="tl-btn tl-right" aria-label="Scroll timeline right">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+          <polyline points="9 18 15 12 9 6"></polyline>
+        </svg>
       </button>
     </div>
   </div>
 
-  <!-- modal open on node click -->
+  <style>
+    .md3-timeline-panel {
+      position: relative;
+      background: linear-gradient(180deg, rgba(20, 36, 50, 0.95) 0%, rgba(10, 20, 30, 0.98) 100%);
+      border: 2px solid rgba(56, 199, 231, 0.3);
+      border-radius: 12px;
+      overflow: hidden;
+      padding: 24px 44px;
+    }
+    .journey-rail {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      top: 42px;
+      height: 4px;
+      background: linear-gradient(90deg, rgba(56,199,231,.6), rgba(255,209,102,.6), rgba(6,214,160,.6));
+      box-shadow: 0 0 12px rgba(56,199,231,.7);
+      pointer-events: none;
+    }
+    .timeline-scroller {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x proximity;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(56, 199, 231, 0.4) transparent;
+    }
+    .timeline {
+      display: flex;
+      gap: 20px;
+      padding: 12px 0 8px;
+    }
+    .node {
+      min-width: 310px;
+      max-width: 350px;
+      position: relative;
+      scroll-snap-align: start;
+      cursor: pointer;
+    }
+    .node .pin {
+      position: absolute;
+      top: -8px;
+      left: 14px;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--pin-color, #38C7E7);
+      border: 2px solid #000;
+      box-shadow: 0 0 12px var(--pin-color, #38C7E7);
+      z-index: 2;
+    }
+    .md3-era-card {
+      margin-top: 14px;
+      margin-left: 20px;
+      padding: 16px;
+      background: rgba(28, 59, 84, 0.4);
+      border: 1px solid rgba(56, 199, 231, 0.25);
+      border-radius: 10px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .node:hover .md3-era-card {
+      transform: translateY(-4px);
+      border-color: rgba(56, 199, 231, 0.7);
+      background: rgba(28, 59, 84, 0.65);
+    }
+    .node .head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .era-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: 8px;
+      display: grid;
+      place-items: center;
+      border: 1px solid;
+      flex-shrink: 0;
+      box-shadow: inset 0 0 8px rgba(0, 0, 0, 0.3);
+    }
+    .era-header-text {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .era-years {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 9px;
+      letter-spacing: 0.5px;
+    }
+    .era-title {
+      margin: 0;
+      font-family: 'Press Start 2P', system-ui;
+      font-size: 11px;
+      line-height: 1.35;
+      color: #ffffff;
+    }
+    .node .note {
+      font-size: 13px;
+      line-height: 1.45;
+      color: #cde6f5;
+      margin-bottom: 8px;
+    }
+    .node .burn {
+      font-size: 12px;
+      color: #ffb4b4;
+      line-height: 1.4;
+      background: rgba(193, 46, 40, 0.15);
+      border-left: 2px solid #ff7570;
+      padding: 4px 8px;
+      border-radius: 0 4px 4px 0;
+    }
+    .burn-label {
+      font-family: 'Press Start 2P', monospace;
+      font-size: 8px;
+      color: #ff7570;
+      margin-right: 4px;
+    }
+
+    /* Scroller Navigation Buttons */
+    .tl-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      border: 1px solid rgba(56, 199, 231, 0.4);
+      border-radius: 50%;
+      background: rgba(14, 27, 38, 0.95);
+      color: #38C7E7;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+      transition: background 0.2s ease, border-color 0.2s ease;
+      z-index: 5;
+    }
+    .tl-btn:hover {
+      background: #1c3b54;
+      border-color: #38C7E7;
+      color: #fff;
+    }
+    .tl-btn:disabled {
+      opacity: 0.25;
+      cursor: default;
+    }
+    .tl-left { left: 8px; }
+    .tl-right { right: 8px; }
+
+    @media (pointer: coarse) {
+      .tl-btn { display: none; }
+      .md3-timeline-panel { padding-left: 14px; padding-right: 14px; }
+    }
+  </style>
+
   <script is:inline>
+    // Click node to open modal
     document.querySelector('#timeline')?.addEventListener('click', (ev) => {
       const node = ev.target.closest('.node');
       if (!node) return;
@@ -101,25 +298,22 @@ const eras = [
         html: node.dataset.html || '',
       });
     });
-  </script>
 
-  <!-- arrows logic (belt scroller) -->
-  <script is:inline>
+    // Scroller belt control
     (function () {
-      const wrap = document.querySelector('#timeline .timeline-wrap');
+      const wrap = document.querySelector('#timeline .md3-timeline-panel');
       const scroller = wrap?.querySelector('#timelineScroller');
-      const leftBtn  = wrap?.querySelector('.tl-left');
+      const leftBtn = wrap?.querySelector('.tl-left');
       const rightBtn = wrap?.querySelector('.tl-right');
       if (!wrap || !scroller || !leftBtn || !rightBtn) return;
 
-      const STEP = () => Math.min(420, Math.round(scroller.clientWidth * 0.6));
+      const STEP = () => Math.min(380, Math.round(scroller.clientWidth * 0.7));
 
       function updateButtons() {
         const max = scroller.scrollWidth - scroller.clientWidth - 1;
-        leftBtn.disabled  = scroller.scrollLeft <= 0;
+        leftBtn.disabled = scroller.scrollLeft <= 0;
         rightBtn.disabled = scroller.scrollLeft >= max;
       }
-
       function nudge(dir) {
         scroller.scrollBy({ left: dir * STEP(), behavior: 'smooth' });
         setTimeout(updateButtons, 420);
@@ -127,101 +321,10 @@ const eras = [
 
       leftBtn.addEventListener('click', () => nudge(-1));
       rightBtn.addEventListener('click', () => nudge(1));
-      scroller.addEventListener('scroll', updateButtons);
+      scroller.addEventListener('scroll', updateButtons, { passive: true });
       window.addEventListener('load', updateButtons);
       window.addEventListener('resize', updateButtons);
       updateButtons();
     })();
   </script>
-
-  <style>
-    /* wrapper */
-    .timeline-wrap{
-      position:relative;
-      overflow:hidden;
-      padding: 18px 42px; /* space for arrows */
-    }
-
-    /* glowing rail behind the pins */
-    .journey-rail{
-      position:absolute; left:12px; right:12px; top:36px; height:4px;
-      background:linear-gradient(90deg, rgba(56,199,231,.6), rgba(124,236,255,.6));
-      box-shadow:0 0 12px rgba(56,199,231,.7);
-      pointer-events:none;
-    }
-
-    /* scroller */
-    .timeline-scroller{
-      overflow-x:auto;
-      -webkit-overflow-scrolling:touch;
-      scroll-snap-type:x proximity;
-    }
-    .timeline{
-      display:flex; gap:18px; padding:10px 0 6px;
-    }
-
-    /* node/card */
-    .node{
-      min-width:320px; max-width:360px;
-      position:relative;
-      scroll-snap-align:start;
-    }
-    .node .pin{
-      position:absolute; top:-6px; left:10px;
-      width:18px; height:18px; border-radius:50%;
-      background:#38C7E7; border:2px solid #000;
-      box-shadow:0 0 10px rgba(56,199,231,.9);
-    }
-    .node .card{
-      margin-top:14px; margin-left:32px; padding:12px;
-      background:rgba(28,59,84,.18);
-      border:2px solid rgba(56,199,231,.35);
-      box-shadow:0 0 0 3px rgba(0,0,0,.55) inset;
-    }
-    .node .head{ display:flex; align-items:center; gap:10px; }
-
-    /* era icon (pixel-style, with glow) */
-    .node .head .era-icon{
-      font-size:48px;
-      color:#38C7E7;
-      filter: drop-shadow(0 0 6px rgba(56,199,231,.6));
-      line-height:1;
-    }
-
-    .node h3{
-      margin:0; font-family:'Press Start 2P', system-ui;
-      font-size:12px; line-height:1.3; white-space:normal;
-    }
-    .node .note, .node .burn{
-      margin-top:8px; font-size:14px; line-height:1.4; white-space:normal;
-      word-break:break-word; overflow-wrap:anywhere;
-    }
-    .node .burn{ color:#ffb0b0; }
-
-    /* arrows */
-    .tl-btn{
-      position:absolute; top:50%; transform:translateY(-50%);
-      width:36px; height:36px;
-      display:grid; place-items:center;
-      border:2px solid rgba(56,199,231,.45);
-      background:rgba(28,59,84,.9);
-      box-shadow:0 0 0 3px rgba(0,0,0,.6) inset, 0 4px 0 #000;
-      color:#fff; cursor:pointer;
-    }
-    .tl-left{  left:8px;  }
-    .tl-right{ right:8px; }
-    .tl-btn iconify-icon{ font-size:22px; color:#38C7E7; filter:drop-shadow(0 0 6px rgba(56,199,231,.6)); }
-    .tl-btn:hover{ filter:brightness(1.08); }
-    .tl-btn:disabled{ opacity:.35; cursor:default; }
-
-    /* hide arrows on touch devices (swipe) */
-    @media (pointer:coarse){
-      .tl-btn{ display:none; }
-      .timeline-wrap{ padding-left:12px; padding-right:12px; }
-    }
-
-    @media (max-width:900px){
-      .node{ min-width:82%; max-width:82%; }
-    }
-  </style>
 </section>

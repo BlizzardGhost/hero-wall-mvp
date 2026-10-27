@@ -4,9 +4,37 @@
   --red:#C12E28;     /* Ms Devil */
   --cream:#F4E3C3;   /* Dog */
   --sky:#4DB6E2;
+  --gold:#FFD166;
+  --emerald:#06D6A0;
   --charcoal:#2B2B2B;
-  --bg:#0d151c;
+  --bg:#0a1218;
   --fg:#ffffff;
+
+  /* Material Design 3 Surface & Elevation System */
+  --md-sys-color-surface: #0e1720;
+  --md-sys-color-surface-dim: #0a1118;
+  --md-sys-color-surface-container-low: rgba(18, 32, 45, 0.6);
+  --md-sys-color-surface-container: rgba(24, 44, 62, 0.7);
+  --md-sys-color-surface-container-high: rgba(30, 56, 80, 0.85);
+  --md-sys-color-surface-container-highest: rgba(38, 70, 98, 0.95);
+  --md-sys-color-outline: rgba(56, 199, 231, 0.25);
+  --md-sys-color-outline-variant: rgba(56, 199, 231, 0.12);
+  --md-sys-color-primary: #38C7E7;
+  --md-sys-color-on-primary: #003642;
+  --md-sys-color-on-surface: #e2f0fa;
+  --md-sys-color-on-surface-variant: #a2c4d6;
+
+  /* MD3 Elevation Tokens */
+  --md-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --md-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.4);
+  --md-elevation-4: 0 8px 24px 4px rgba(0, 0, 0, 0.4), 0 2px 4px 0 rgba(0, 0, 0, 0.5);
+
+  /* Shape Tokens */
+  --md-shape-corner-small: 8px;
+  --md-shape-corner-medium: 12px;
+  --md-shape-corner-large: 16px;
+  --md-shape-corner-full: 9999px;
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0;background:var(--bg);color:var(--fg);font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial}
@@ -347,7 +375,13 @@ header.scrolled { transform: translateY(-2px); }
 .loadout-chip.rare .iconify{ color:#FFD166; filter:drop-shadow(0 0 6px rgba(255,214,102,.5)) }
 
 /* Skills meters */
-.skills-panel{ padding:20px 18px }
+.skills-panel{
+  padding: 24px 22px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(20, 36, 50, 0.95) 0%, rgba(10, 20, 30, 0.98) 100%);
+  border: 2px solid rgba(56, 199, 231, 0.3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+}
 .skills-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px }
 @media (max-width:900px){ .skills-grid{ grid-template-columns:1fr } }
 .skill{ display:flex; flex-direction:column; gap:8px }

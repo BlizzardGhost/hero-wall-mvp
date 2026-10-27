@@ -1,6 +1,5 @@
 ---
 import { badges as defaultBadges } from '../data/badges';
-import heroData from '../data/hero.json';
 
 // Accept badges via props or fall back to data file
 type Tier = 'ultimate' | 'prestige' | 'special' | 'locked';
@@ -27,8 +26,6 @@ const sorted: Badge[] = [...input].sort((a, b) => {
   if (tierDelta) return tierDelta;
   return (b.date ?? '').localeCompare(a.date ?? '');
 });
-
-const heroBadges = heroData?.badges ?? { active: [], pending: [] };
 ---
 
 <section id="trophies" class="section">
@@ -39,10 +36,11 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
       <!-- Top Controls & Filter Bar -->
       <div class="trophies-toolbar">
         <div class="filter-tabs" id="badgeFilters">
-          <button class="filter-chip active" data-filter="all">All Trophies ({sorted.length})</button>
+          <button class="filter-chip active" data-filter="all">All Cards ({sorted.length})</button>
           <button class="filter-chip" data-filter="earned">Unlocked ({sorted.filter(b => b.earned).length})</button>
+          <button class="filter-chip" data-filter="pending">Pending Quests ({sorted.filter(b => !b.earned && b.tier !== 'locked').length})</button>
           <button class="filter-chip" data-filter="ultimate">Ultimate ({sorted.filter(b => b.tier === 'ultimate').length})</button>
-          <button class="filter-chip" data-filter="locked">Locked</button>
+          <button class="filter-chip" data-filter="locked">Mystery / Locked</button>
         </div>
 
         <div class="lore-toggle-wrap">
@@ -56,20 +54,22 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
 
       <!-- Pokémon-Card Style Badge Grid -->
       <div class="pokemon-badge-grid" id="badgeGrid">
-        {sorted.map((b) => {
+        {sorted.map((b, index) => {
           const iconSrc = b.icon?.startsWith('/') ? b.icon : `/badges/${b.icon}`;
           const lvl = (b.name.match(/Lvl\s*(\d+)/)?.[1]) ?? '';
           const categoryName = (b.category ?? 'system').toUpperCase();
+          const cardNum = String(index + 1).padStart(3, '0');
 
           return (
             <div
               class={`pokemon-card tier-${b.tier} ${b.earned ? 'unlocked' : 'locked'}`}
               data-tier={b.tier}
               data-earned={b.earned ? 'true' : 'false'}
+              data-pending={!b.earned && b.tier !== 'locked' ? 'true' : 'false'}
               data-tip={b.tooltip}
               data-category={b.category}
             >
-              <!-- Card Header: Type Tag & XP -->
+              <!-- Card Header: Type Tag & XP Rating -->
               <div class="poke-head">
                 <span class={`poke-type-badge ${b.category}`}>
                   <iconify-icon icon={
@@ -88,13 +88,29 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
                 </span>
               </div>
 
-              <!-- Artwork Frame with Holographic Glow -->
+              <!-- Artwork Frame with Holographic Glow & Fallback Shields -->
               <div class="poke-art-frame">
                 <div class="holo-shimmer" aria-hidden="true"></div>
                 {b.icon?.includes(':') ? (
-                  <iconify-icon icon={b.icon} class="poke-art-icon" aria-hidden="true"></iconify-icon>
+                  <div class="poke-vector-wrap">
+                    <svg class="poke-shield-bg" viewBox="0 0 100 100" aria-hidden="true">
+                      <polygon points="50,5 90,20 90,65 50,95 10,65 10,20" fill="rgba(56,199,231,0.12)" stroke="rgba(56,199,231,0.5)" stroke-width="2"/>
+                    </svg>
+                    <iconify-icon icon={b.icon} class="poke-art-icon" aria-hidden="true"></iconify-icon>
+                  </div>
                 ) : (
-                  <img src={iconSrc} alt={b.name} loading="lazy" />
+                  <img
+                    src={iconSrc}
+                    alt={b.name}
+                    loading="lazy"
+                    onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"
+                  />
+                  <div class="poke-fallback-shield" style="display:none;" aria-hidden="true">
+                    <svg viewBox="0 0 100 100" width="64" height="64">
+                      <polygon points="50,5 90,20 90,65 50,95 10,65 10,20" fill="rgba(255,209,102,0.15)" stroke="#ffd166" stroke-width="3"/>
+                      <circle cx="50" cy="48" r="16" fill="rgba(56,199,231,0.25)" stroke="#38c7e7" stroke-width="2"/>
+                    </svg>
+                  </div>
                 )}
                 {lvl && <div class="poke-lvl-stamp">LVL {lvl}</div>}
               </div>
@@ -111,7 +127,17 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
                 )}
               </div>
 
-              <!-- Card Foil Sheen -->
+              <!-- Card Footer with Rarity Stamp & Number -->
+              <div class="poke-card-footer">
+                <span class={`poke-rarity-stamp ${b.tier}`}>
+                  {b.tier === 'ultimate' ? '★ ULTIMATE RARE' :
+                   b.tier === 'prestige' ? '◆ PRESTIGE' :
+                   b.tier === 'special' ? '▲ SPECIAL' : '🔒 LOCKED'}
+                </span>
+                <span class="poke-card-id">#HQ-{cardNum}</span>
+              </div>
+
+              <!-- Holographic Foil Sheen Overlay -->
               <div class="holo-foil-overlay" aria-hidden="true"></div>
             </div>
           );
@@ -298,6 +324,19 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
     .pokemon-card:hover .poke-art-frame img {
       transform: scale(1.08);
     }
+    .poke-vector-wrap {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: grid;
+      place-items: center;
+    }
+    .poke-shield-bg {
+      position: absolute;
+      width: 110px;
+      height: 110px;
+      pointer-events: none;
+    }
     .poke-art-icon {
       font-size: 56px;
       color: #ffd166;
@@ -364,6 +403,28 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
       font-style: italic;
     }
 
+    /* Card Footer & Rarity Stamp */
+    .poke-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 10px;
+      padding-top: 8px;
+      border-top: 1px solid rgba(56, 199, 231, 0.15);
+      font-size: 9px;
+      font-family: 'Press Start 2P', monospace;
+    }
+    .poke-rarity-stamp {
+      letter-spacing: 0.5px;
+    }
+    .poke-rarity-stamp.ultimate { color: #ffd166; text-shadow: 0 0 6px rgba(255, 209, 102, 0.5); }
+    .poke-rarity-stamp.prestige { color: #38C7E7; }
+    .poke-rarity-stamp.special { color: #06d6a0; }
+    .poke-rarity-stamp.locked { color: #8dafc2; }
+    .poke-card-id {
+      color: #6a8ea3;
+    }
+
     /* Holo Overlay */
     .holo-foil-overlay {
       position: absolute;
@@ -410,10 +471,12 @@ const heroBadges = heroData?.badges ?? { active: [], pending: [] };
             card.style.display = 'flex';
           } else if (filter === 'earned') {
             card.style.display = card.dataset.earned === 'true' ? 'flex' : 'none';
+          } else if (filter === 'pending') {
+            card.style.display = card.dataset.pending === 'true' ? 'flex' : 'none';
           } else if (filter === 'ultimate') {
             card.style.display = card.dataset.tier === 'ultimate' ? 'flex' : 'none';
           } else if (filter === 'locked') {
-            card.style.display = card.dataset.earned === 'false' ? 'flex' : 'none';
+            card.style.display = (card.dataset.earned === 'false' && card.dataset.tier === 'locked') ? 'flex' : 'none';
           }
         });
       });
