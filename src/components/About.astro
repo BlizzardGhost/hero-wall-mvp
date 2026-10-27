@@ -1,48 +1,115 @@
+---
+import data from "../data/hero.json";
+
+const hero = data?.hero ?? {
+  name: "Boris",
+  title: "LATAM AI Sherpa",
+  level: 39,
+  protocol: "RASS v39.1.3",
+  category: "Explorer–Builder–Teacher"
+};
+const abstract = data?.abstract ?? "";
+---
+
 <section id="about" class="section">
   <div class="inner">
-    <div class="banner">Character Profile</div>
-    <div class="panel" style="margin-top:12px">
-      <div class="charcard">
-        <!-- Portrait -->
-        <div class="holo" style="grid-area:pic">
-          <img src="/img/boris-portrait.png" alt="Boris hologram portrait" loading="lazy" />
+    <div class="banner">RPG Character Profile</div>
+
+    <div class="panel md3-profile-card" style="margin-top:12px">
+      <!-- Top Hero Header Bar -->
+      <div class="profile-header">
+        <div class="holo-avatar-wrap">
+          <div class="holo-avatar">
+            <img src="/img/boris-portrait.png" alt="Boris hologram portrait" loading="lazy" />
+            <div class="scanlines" aria-hidden="true"></div>
+          </div>
+          <div class="level-badge" data-tip="Current Level">
+            <span class="lvl-prefix">LVL</span>
+            <span class="lvl-number">{hero.level}</span>
+          </div>
         </div>
 
-        <!-- Nameplate -->
-        <div class="cc-nameplate">
-          <div>Boris Quijano — Digital Strategist &amp; Narrative Architect</div>
+        <div class="profile-title-block">
+          <div class="profile-badges-row">
+            <span class="md3-badge-pill protocol"><iconify-icon icon="pixelarticons:zap"></iconify-icon> {hero.protocol}</span>
+            <span class="md3-badge-pill category"><iconify-icon icon="pixelarticons:flag"></iconify-icon> {hero.category}</span>
+            <span class="md3-badge-pill sanctuary"><iconify-icon icon="pixelarticons:home"></iconify-icon> Ciudad Marsella</span>
+          </div>
+          <h2 class="profile-name">Boris Quijano</h2>
+          <div class="profile-subtitle">LATAM AI Sherpa — Digital Strategist &amp; Narrative Architect</div>
         </div>
+      </div>
 
-        <!-- Stats -->
-        <div class="cc-stats">
-          <div class="cc-row">
+      <!-- Sovereign Abstract Quote -->
+      {abstract && (
+        <div class="abstract-quote-box">
+          <div class="quote-header">
+            <iconify-icon icon="pixelarticons:script"></iconify-icon>
+            <span>SOVEREIGN COMPASS &amp; ABSTRACT</span>
+          </div>
+          <p class="quote-text">{abstract}</p>
+        </div>
+      )}
+
+      <!-- RPG Stats Matrix -->
+      <div class="charcard-v2">
+        <div class="cc-stats-grid">
+          <div class="stat-cell">
             <span class="iconify" data-icon="game-icons:crown"></span>
-            <div><div class="label">Class</div><div class="text">Narrative Architect</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Class</span>
+              <span class="stat-value">Narrative Architect</span>
+            </div>
           </div>
-          <div class="cc-row">
+
+          <div class="stat-cell">
             <span class="iconify" data-icon="mdi:robot-happy-outline"></span>
-            <div><div class="label">Spec</div><div class="text">Technomancy (AI + Systems)</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Spec</span>
+              <span class="stat-value">Technomancy (AI + Systems)</span>
+            </div>
           </div>
-          <div class="cc-row">
+
+          <div class="stat-cell">
             <span class="iconify" data-icon="mdi:handshake-outline"></span>
-            <div><div class="label">Alignment</div><div class="text">Chaotic Good</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Alignment</span>
+              <span class="stat-value">Chaotic Good</span>
+            </div>
           </div>
-          <div class="cc-row">
+
+          <div class="stat-cell">
             <span class="iconify" data-icon="mdi:atom-variant"></span>
-            <div><div class="label">Era</div><div class="text">Graphene Age (4th Life)</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Era</span>
+              <span class="stat-value">Sovereign Age (4th Life)</span>
+            </div>
           </div>
-          <div class="cc-row">
+
+          <div class="stat-cell">
             <span class="iconify" data-icon="game-icons:upgrade"></span>
-            <div><div class="label">Experience</div><div class="text">15+ years — end‑to‑end IT, marketing, design</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Experience</span>
+              <span class="stat-value">15+ years — IT, Marketing, AI Fleet</span>
+            </div>
           </div>
-          <div class="cc-row">
+
+          <div class="stat-cell">
             <span class="iconify" data-icon="mdi:translate-variant"></span>
-            <div><div class="label">Language</div><div class="text">EN / ES (bicultural: US &amp; LATAM)</div></div>
+            <div class="stat-meta">
+              <span class="stat-label">Language</span>
+              <span class="stat-value">EN / ES (Bicultural US &amp; LATAM)</span>
+            </div>
           </div>
         </div>
 
-        <!-- Loadout -->
-        <div class="loadout-wrap">
+        <!-- Tech Loadout Belt -->
+        <div class="loadout-wrap-v2">
+          <div class="loadout-label-bar">
+            <iconify-icon icon="pixelarticons:briefcase"></iconify-icon>
+            <span>EQUIPPED LOADOUT &amp; TECH STACK</span>
+          </div>
+
           <div class="loadout-belt">
             <div class="loadout-bar" id="loadoutBar">
               <span class="loadout-chip" data-tip="Design Systems"><span class="iconify" data-icon="simple-icons:figma"></span>Figma</span>
@@ -50,11 +117,12 @@
               <span class="loadout-chip" data-tip="Backend Runtime"><span class="iconify" data-icon="mdi:nodejs"></span>Node</span>
               <span class="loadout-chip" data-tip="Fast Runtime & Bundler"><span class="iconify" data-icon="simple-icons:bun"></span>Bun</span>
               <span class="loadout-chip" data-tip="Rapid UI"><span class="iconify" data-icon="mdi:tailwind"></span>Tailwind</span>
-              <span class="loadout-chip" data-tip="No‑Code Automations"><span class="iconify" data-icon="simple-icons:zap"></span>Zapier</span>
+              <span class="loadout-chip" data-tip="No-Code Automations"><span class="iconify" data-icon="simple-icons:zap"></span>Zapier</span>
               <span class="loadout-chip" data-tip="API Workflows"><span class="iconify" data-icon="mdi:pipe-disconnected"></span>Pipedream</span>
               <span class="loadout-chip" data-tip="Islands & Speed"><span class="iconify" data-icon="simple-icons:astro"></span>Astro</span>
               <span class="loadout-chip" data-tip="Edge Deploys"><span class="iconify" data-icon="simple-icons:vercel"></span>Vercel</span>
               <span class="loadout-chip" data-tip="CDN & Security"><span class="iconify" data-icon="simple-icons:cloudflare"></span>Cloudflare</span>
+              <span class="loadout-chip" data-tip="Edge AI Models"><span class="iconify" data-icon="simple-icons:google"></span>Gemini</span>
               <span class="loadout-chip" data-tip="Text→Video"><span class="iconify" data-icon="mdi:movie-open-outline"></span>Sora</span>
               <span class="loadout-chip" data-tip="Image Gen"><span class="iconify" data-icon="mdi:image-auto-adjust"></span>Genspark</span>
               <span class="loadout-chip rare" id="chipChatGPT" data-tip="Fear is for NPCs — Level 13 unlocked.">
@@ -62,9 +130,8 @@
               </span>
             </div>
 
-            <!-- arrows bound to the belt only -->
             <div class="loadout-nav" aria-hidden="true">
-              <button class="nav-btn left"  id="loadoutPrev" aria-label="Scroll loadout left">
+              <button class="nav-btn left" id="loadoutPrev" aria-label="Scroll loadout left">
                 <span class="iconify" data-icon="mdi:chevron-left"></span>
               </button>
               <button class="nav-btn right" id="loadoutNext" aria-label="Scroll loadout right">
@@ -72,7 +139,6 @@
               </button>
             </div>
 
-            <!-- edge fades -->
             <div class="fade left"></div>
             <div class="fade right"></div>
           </div>
@@ -84,6 +150,198 @@
       </div>
     </div>
   </div>
+
+  <style>
+    .md3-profile-card {
+      background: linear-gradient(180deg, rgba(20, 38, 54, 0.95) 0%, rgba(13, 21, 28, 0.98) 100%);
+      border: 2px solid rgba(56, 199, 231, 0.35);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      margin-bottom: 20px;
+    }
+    .holo-avatar-wrap {
+      position: relative;
+      flex-shrink: 0;
+    }
+    .holo-avatar {
+      width: 104px;
+      height: 104px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 3px solid rgba(56, 199, 231, 0.6);
+      box-shadow: 0 0 20px rgba(56, 199, 231, 0.35);
+      background: #0d151c;
+      position: relative;
+    }
+    .holo-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .holo-avatar .scanlines {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+      background-size: 100% 4px;
+      pointer-events: none;
+    }
+    .level-badge {
+      position: absolute;
+      bottom: -8px;
+      right: -8px;
+      background: linear-gradient(135deg, #ffd166 0%, #e09f3e 100%);
+      color: #0d151c;
+      border: 2px solid #000;
+      border-radius: 8px;
+      padding: 3px 7px;
+      font-family: 'Press Start 2P', system-ui;
+      box-shadow: 0 3px 0 #000;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1;
+    }
+    .level-badge .lvl-prefix { font-size: 8px; font-weight: bold; }
+    .level-badge .lvl-number { font-size: 13px; font-weight: 900; }
+
+    .profile-title-block { flex: 1; min-width: 0; }
+    .profile-badges-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 8px;
+    }
+    .md3-badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: 'Press Start 2P', monospace;
+      letter-spacing: -0.5px;
+      background: rgba(56, 199, 231, 0.1);
+      border: 1px solid rgba(56, 199, 231, 0.3);
+      color: #38C7E7;
+    }
+    .md3-badge-pill.protocol { color: #ffd166; border-color: rgba(255, 209, 102, 0.4); background: rgba(255, 209, 102, 0.1); }
+    .md3-badge-pill.sanctuary { color: #06d6a0; border-color: rgba(6, 214, 160, 0.4); background: rgba(6, 214, 160, 0.1); }
+    .profile-name {
+      font-family: 'Press Start 2P', system-ui;
+      font-size: clamp(16px, 2.5vw, 24px);
+      margin: 0 0 6px;
+      color: #fff;
+      text-shadow: 0 2px 0 #000, 0 0 12px rgba(56, 199, 231, 0.4);
+    }
+    .profile-subtitle {
+      color: #b8d9ea;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+
+    .abstract-quote-box {
+      margin-top: 14px;
+      margin-bottom: 20px;
+      padding: 14px 18px;
+      background: rgba(56, 199, 231, 0.06);
+      border-left: 4px solid #38C7E7;
+      border-radius: 0 8px 8px 0;
+    }
+    .quote-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: #38C7E7;
+      margin-bottom: 6px;
+      letter-spacing: 0.5px;
+    }
+    .quote-text {
+      margin: 0;
+      color: #e9f7ff;
+      font-size: 13.5px;
+      line-height: 1.55;
+      font-style: italic;
+    }
+
+    .cc-stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 12px;
+      margin-bottom: 22px;
+    }
+    .stat-cell {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: rgba(28, 59, 84, 0.35);
+      border: 1px solid rgba(56, 199, 231, 0.2);
+      border-radius: 8px;
+      transition: border-color 0.2s ease, background 0.2s ease;
+    }
+    .stat-cell:hover {
+      border-color: rgba(56, 199, 231, 0.5);
+      background: rgba(28, 59, 84, 0.55);
+    }
+    .stat-cell .iconify {
+      font-size: 24px;
+      color: #38C7E7;
+      flex-shrink: 0;
+    }
+    .stat-meta {
+      display: flex;
+      flex-direction: column;
+    }
+    .stat-label {
+      font-size: 11px;
+      color: #8dafc2;
+      text-transform: uppercase;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+    }
+    .stat-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: #ffffff;
+    }
+
+    .loadout-wrap-v2 {
+      margin-top: 14px;
+    }
+    .loadout-label-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 10px;
+      color: #ffd166;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .profile-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .holo-avatar {
+        width: 88px;
+        height: 88px;
+      }
+      .cc-stats-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
 
   <script>
     // Easter egg (long hover or click)
@@ -98,38 +356,40 @@
     ];
     const randLine = () => LINES[Math.floor(Math.random()*LINES.length)];
     function openEgg(){
-      msg.classList.add('show');
-      if (window.HeroWallModal?.open) {
-        window.HeroWallModal.open({ title: "Secret Loadout: Level 13", html: `<p>${randLine()}</p>` });
+      msg?.classList.add('show');
+      if (window.HeroWallModal && window.HeroWallModal.open) {
+        window.HeroWallModal.open({
+          title: "Secret Loadout: Level 13",
+          html: `<p>${randLine()}</p>`
+        });
       } else {
-        msg.innerHTML = `<span class="hint">Secret:</span> ${randLine()}`;
+        if(msg) msg.innerHTML = `<span class="hint">Secret:</span> ${randLine()}`;
       }
     }
-    chip?.addEventListener('mouseenter', ()=>{ t = setTimeout(openEgg, 1200); });
-    chip?.addEventListener('mouseleave', ()=>{ clearTimeout(t); });
+    chip?.addEventListener('mouseenter', () => { t = setTimeout(openEgg, 1200); });
+    chip?.addEventListener('mouseleave', () => { clearTimeout(t); });
     chip?.addEventListener('click', openEgg);
 
-    // Inventory arrows (bound to belt height, not the hint)
-    const bar  = document.getElementById('loadoutBar');
+    // Loadout belt scrolling controls
+    const bar = document.getElementById('loadoutBar');
     const prev = document.getElementById('loadoutPrev');
     const next = document.getElementById('loadoutNext');
 
-    function updateArrows(){
-      if(!bar) return;
-      const max = bar.scrollWidth - bar.clientWidth - 1;
+    function updateNav() {
+      if (!bar) return;
+      const maxScroll = bar.scrollWidth - bar.clientWidth - 1;
       prev?.classList.toggle('disabled', bar.scrollLeft <= 0);
-      next?.classList.toggle('disabled', bar.scrollLeft >= max);
+      next?.classList.toggle('disabled', bar.scrollLeft >= maxScroll);
     }
-    function step(dir){
-      if(!bar) return;
-      const chip = bar.querySelector('.loadout-chip');
-      const w = chip ? (chip.offsetWidth + 10) : 140; // gap ≈ 10
-      bar.scrollBy({ left: dir * (w * 3), behavior: 'smooth' });
-      setTimeout(updateArrows, 420);
+    function scrollBelt(direction) {
+      if (!bar) return;
+      const step = bar.clientWidth * 0.6;
+      bar.scrollBy({ left: direction * step, behavior: 'smooth' });
+      setTimeout(updateNav, 420);
     }
-    prev?.addEventListener('click', ()=>step(-1));
-    next?.addEventListener('click', ()=>step(1));
-    bar?.addEventListener('scroll', updateArrows);
-    window.addEventListener('load', updateArrows);
+    prev?.addEventListener('click', () => scrollBelt(-1));
+    next?.addEventListener('click', () => scrollBelt(1));
+    bar?.addEventListener('scroll', updateNav);
+    window.addEventListener('load', updateNav);
   </script>
 </section>

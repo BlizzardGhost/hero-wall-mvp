@@ -9,10 +9,6 @@ import Relics from "../components/Relics.astro";
 import CTA from "../components/CTA.astro";
 import Footer from "../components/Footer.astro";
 
-/* NEW: agent-managed sections */
-import HeroMeta from "../components/HeroMeta.astro";
-import AgentBadges from "../components/AgentBadges.astro";
-
 const LINKS = [
   { title: "Infusion 2.0 Website", href: "https://infusion.site", desc: "Agency & corporate-facing offer." },
   { title: "Kidslab.lat",          href: "https://kidslab.lat",   desc: "Educational brand for kids and parents." },
@@ -25,19 +21,17 @@ const EMAIL = "borisqj+hero@proton.me";
 <BaseLayout title="Boris Quijano — Digital Strategist & Narrative Architect">
   <Hero />
 
-  <!-- Agent-managed meta (safe anchors inside the component) -->
-  <HeroMeta />
-
+  <!-- Unified MD3 RPG Character Profile (Consolidating Hero Meta, Avatar, Level 39 & Abstract) -->
   <About />
+
   <Skills />
 
-  <!-- Timeline & BadgeWall manage their own data; no props needed -->
+  <!-- Hero Journey Timeline (5 Eras through 2026 Sovereign Age) -->
   <Timeline />
 
-  <!-- Agent-managed badge titles (doesn't replace your visual BadgeWall) -->
-  <AgentBadges />
-
+  <!-- Collectible Pokémon-Card Style Trophies & Achievements (Holo Foil, XP & Lore Mode) -->
   <BadgeWall />
+
   <Relics />
   <CTA href={`mailto:${EMAIL}`} />
   <Footer infusionUrl="https://infusion.site" kidslabUrl="https://kidslab.lat" email={EMAIL} />

@@ -10,14 +10,17 @@ export type Badge = {
   earned: boolean;
   tooltip?: string;
   lore?: string;
-  category: 'system' | 'urban' | 'burn' | 'utility' | 'treasure' | 'discipline' | 'food' | 'mystery';
+  category: 'system' | 'urban' | 'burn' | 'utility' | 'treasure' | 'discipline' | 'food' | 'mystery' | 'sanctuary';
   date?: string;
 };
 
 export const badges: Badge[] = [
-  { name:'Lvl 2 — RASS Protocol Initiate', caption:'First operational activation of the RASS Protocol.', icon:'badge_lv2_rass.png', xp:150, tier:'ultimate', earned:true, tooltip:'Where the systems awoke.', lore:'The moment you stopped running solo and brought RASS online — the AI ally who never sleeps.', category:'system' },
-  { name:'Lvl 12 — Command Architect', caption:'Mastery over project flow and command systems.', icon:'badge_lv12_command.png', xp:300, tier:'ultimate', earned:true, tooltip:'Architect of your own fate.', lore:'Your battlemap became more than notes — it became a war room.', category:'system' },
+  { name:'Lvl 39 — Sovereign Sanctuary Reclaimed', caption:'Ciudad Marsella sanctuary re-anchored. 365-day loop closed.', icon:'badge_lv17_evolution.png', xp:500, tier:'ultimate', earned:true, tooltip:'Loop closed. Sovereign ground reclaimed.', lore:'Returning to Marsella and Opico with clear perimeter and persistent memory. Pure Hero Level 39 execution.', category:'sanctuary' },
+  { name:'Three-Lane Stabilization', caption:'KidsLab 3.0, Infusio, and Sovereign Sanctuary running in parallel.', icon:'badge_lv12_command.png', xp:350, tier:'ultimate', earned:true, tooltip:'Three lanes, zero collapse.', lore:'Balancing commercial AI agency, educational leadership, and personal life reconstruction.', category:'system' },
+  { name:'Strava 4-Week Run Streak', caption:'Consistent morning runs measured through edge telemetry.', icon:'badge_urban_forager1.png', xp:200, tier:'prestige', earned:true, tooltip:'You cannot improve what you do not measure.', lore:'Direct hardware telemetry tracking cadence, pace, and physical resilience.', category:'discipline' },
   { name:'Lvl 17 — System Evolution', caption:'Transition into Siege Mode & multi-project coordination without collapse.', icon:'badge_lv17_evolution.png', xp:400, tier:'ultimate', earned:true, tooltip:'Adapt, evolve, dominate.', lore:'This is the point where chaos became order — and stayed that way.', category:'system' },
+  { name:'Lvl 12 — Command Architect', caption:'Mastery over project flow and command systems.', icon:'badge_lv12_command.png', xp:300, tier:'ultimate', earned:true, tooltip:'Architect of your own fate.', lore:'Your battlemap became more than notes — it became a war room.', category:'system' },
+  { name:'Lvl 2 — RASS Protocol Initiate', caption:'First operational activation of the RASS Protocol.', icon:'badge_lv2_rass.png', xp:150, tier:'ultimate', earned:true, tooltip:'Where the systems awoke.', lore:'The moment you stopped running solo and brought RASS online — the AI ally who never sleeps.', category:'system' },
 
   { name:'Urban Forager I', caption:'Complete a supply run with 3+ temptations resisted.', icon:'badge_urban_forager1.png', xp:80, tier:'prestige', earned:true, tooltip:'City’s full of traps — you walked past them.', lore:'Street-level discipline in a world designed to make you spend.', category:'urban' },
   { name:'Controlled Burn', caption:'Strategic asset liquidation to secure operations.', icon:'badge_controlled_burn.png', xp:100, tier:'prestige', earned:true, tooltip:'Burn it down to build it right.', lore:'You sold what you had to save what mattered.', category:'burn' },
