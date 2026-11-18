@@ -1,15 +1,19 @@
 ---
 /**
  * Path: src/components/OverworldStage.astro
- * Purpose: 16-bit RPG Overworld viewport shell (`#overworldStage` / `.overworld-shell`)
- *          mounting the PixiJS v8 WebGPU canvas (`#overworldCanvasHost`),
- *          fast-travel HUD controls (`[data-travel-zone]`), celestial override
- *          (`#celestialToggle`), mute toggle (`#audioToggle`), WCAG 2.2.2 motion
- *          control (`#motionToggle`), companion/chest triggers (`#dogPetTrigger`,
- *          `#roastChestTrigger`), backend badge (`#rendererBadge`), and static
- *          accessible fallback markup.
- * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ * Purpose: Full-viewport 16-bit RPG Overworld console shell (`#overworldStage` /
+ *          `.overworld-shell`) pairing a compact SNES Top HUD Bar (`.overworld-bezel-top`),
+ *          full-bleed PixiJS/Canvas game screen (`.overworld-viewport`) with overlaid
+ *          `<SnesDialogueBox />` and accessible `#overworldFallback`, and a tactile
+ *          desktop/mobile Game Boy Advance controller deck (`.gba-controller-deck`).
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Desktop (> 900px) frames the stage as a widescreen 16-bit CRT filling 100dvh.
+ * - Mobile (<= 900px) splits into a 58dvh top game viewport + 42dvh bottom controller deck.
+ * - `#motionToggle` intentionally omits `aria-pressed` per WCAG 2.2.2 / modern-web-guidance motion.
  */
+import SnesDialogueBox from "./SnesDialogueBox.astro";
 ---
 
 <div
@@ -17,68 +21,25 @@
   class="overworld-stage overworld-shell"
   data-zone-active="sanctuary"
 >
-  <div class="overworld-bezel-top">
+  <h1 id="overworldMainHeading" class="visually-hidden" tabindex="-1">
+    Boris Quijano, Level 39 LATAM AI Sherpa: 16-Bit RPG Overworld
+  </h1>
+
+  <!-- Top HUD Bar -->
+  <header class="overworld-bezel-top">
     <div class="ow-status-group">
-      <span class="ow-badge-title">OVERWORLD</span>
-      <span id="overworldZoneLabel" class="ow-zone-readout">
-        1. Sanctuary Citadel
-      </span>
-      <span
-        id="rendererBadge"
-        class="ow-renderer-badge"
-        data-backend="pending"
-        title="Active PixiJS rendering backend"
-      >
-        webgpu
-      </span>
-    </div>
-
-    <div class="ow-tool-group" role="group" aria-label="Overworld display and sound controls">
-      <button
-        type="button"
-        id="celestialToggle"
-        class="ow-tool-btn"
-        aria-label="Toggle day or night sky"
-      >
-        ☀️ / 🌙
-      </button>
-      <button
-        type="button"
-        id="audioToggle"
-        class="ow-tool-btn"
-        data-muted="false"
-      >
-        Mute SFX
-      </button>
-      <button
-        type="button"
-        id="motionToggle"
-        class="ow-tool-btn"
-      >
-        Pause motion
-      </button>
-    </div>
-  </div>
-
-  <div class="overworld-viewport">
-    <div id="overworldCanvasHost" class="overworld-canvas-host">
-      <div id="overworldFallback" class="overworld-fallback">
-        <p class="ow-fallback-title">16-Bit Sherpa Overworld (Accessible Stage Mode)</p>
-        <p class="ow-fallback-copy">
-          Party: Boris (Level 39 Sherpa), White Dog (memorial companion honoring Emy, Kiba, and Yue),
-          RASS drone, and Ms. Devil. Use Fast Travel or the action buttons below to explore all five
-          world zones and open the monolith chest.
-        </p>
-        <noscript>
-          <p class="ow-fallback-copy">
-            JavaScript is disabled. Jump directly to #sanctuary, #eras, #relics, #trophies, or #beacon below.
-          </p>
-        </noscript>
+      <div class="ow-char-chip" aria-label="Hero status: Boris Level 39, HP 100 of 100, MP 999 of 999">
+        <span class="ow-char-name">BORIS · LVL 39</span>
+        <span class="ow-char-vitals">HP 100/100 · MP 999/999</span>
       </div>
+      <span id="overworldZoneLabel" class="ow-zone-readout">
+        1. Sanctuary Campfire
+      </span>
+      <span id="gameStateBadge" class="ow-state-badge">
+        EXPLORING
+      </span>
     </div>
-  </div>
 
-  <div class="overworld-hud">
     <nav class="ow-travel-nav" aria-label="Overworld Fast Travel">
       <button
         type="button"
@@ -123,26 +84,181 @@
       </button>
     </nav>
 
-    <div class="ow-actions">
+    <div class="ow-tool-group" role="group" aria-label="Overworld display, audio, and dossier controls">
+      <button
+        type="button"
+        id="celestialToggle"
+        class="ow-tool-btn"
+        aria-label="Toggle day or night sky"
+      >
+        <span aria-hidden="true">☀️ / 🌙</span>
+      </button>
+      <button
+        type="button"
+        id="audioToggle"
+        class="ow-tool-btn"
+        data-muted="false"
+      >
+        Mute SFX
+      </button>
+      <button
+        type="button"
+        id="motionToggle"
+        class="ow-tool-btn"
+      >
+        Pause motion
+      </button>
+      <button
+        type="button"
+        id="btnOpenDossier"
+        class="ow-tool-btn ow-dossier-btn"
+      >
+        [C] Dossier
+      </button>
+      <span
+        id="rendererBadge"
+        class="ow-renderer-badge"
+        data-backend="pending"
+        title="Active PixiJS rendering backend"
+      >
+        webgpu
+      </span>
+    </div>
+  </header>
+
+  <!-- Game Screen Viewport (Canvas Host + Accessible Fallback + SNES Dialogue Overlay) -->
+  <div class="overworld-viewport">
+    <div id="overworldCanvasHost" class="overworld-canvas-host">
+      <div id="overworldFallback" class="overworld-fallback">
+        <p class="ow-fallback-title">16-Bit Sherpa Overworld (Accessible Stage Mode)</p>
+        <p class="ow-fallback-copy">
+          Party: Boris (Level 39 Sherpa), White Dog (memorial companion honoring Emy, Kiba, and Yue),
+          RASS drone, and Ms. Devil. Open the Character Dossier terminal or use Fast Travel to explore
+          all five biomes, relics, trophies, and contact channels.
+        </p>
+        <div class="ow-fallback-actions">
+          <button
+            type="button"
+            id="fallbackOpenDossier"
+            class="ow-action-btn ow-fallback-dossier-btn"
+            data-open-dossier
+          >
+            Open [C] Character Dossier
+          </button>
+        </div>
+        <noscript>
+          <p class="ow-fallback-copy">
+            JavaScript is disabled. Enable JavaScript to walk the 5-biome overworld and launch the [C] Character Dossier.
+          </p>
+        </noscript>
+      </div>
+    </div>
+
+    <SnesDialogueBox />
+  </div>
+
+  <!-- Bottom Controller / Tactile Game Boy Deck -->
+  <div class="gba-controller-deck" role="region" aria-label="Overworld controller deck">
+    <div class="gba-dpad-grid" role="group" aria-label="Directional pad">
+      <button
+        type="button"
+        id="dpadUp"
+        class="gba-dpad-btn"
+        data-dpad="up"
+        aria-label="Move up"
+      >
+        <span aria-hidden="true">&#9650;</span>
+      </button>
+      <button
+        type="button"
+        id="dpadLeft"
+        class="gba-dpad-btn"
+        data-dpad="left"
+        aria-label="Move left"
+      >
+        <span aria-hidden="true">&#9664;</span>
+      </button>
+      <span class="gba-dpad-center" aria-hidden="true"></span>
+      <button
+        type="button"
+        id="dpadRight"
+        class="gba-dpad-btn"
+        data-dpad="right"
+        aria-label="Move right"
+      >
+        <span aria-hidden="true">&#9654;</span>
+      </button>
+      <button
+        type="button"
+        id="dpadDown"
+        class="gba-dpad-btn"
+        data-dpad="down"
+        aria-label="Move down"
+      >
+        <span aria-hidden="true">&#9660;</span>
+      </button>
+    </div>
+
+    <div class="gba-system-group" role="group" aria-label="System buttons">
+      <button type="button" id="btnStartDossier" class="gba-sys-btn">
+        [START / C] <span class="visually-hidden">Character Dossier</span>
+      </button>
+      <button type="button" id="btnSelectRoast" class="gba-sys-btn">
+        [SELECT / R] <span class="visually-hidden">Roast Chest</span>
+      </button>
+    </div>
+
+    <div class="gba-quick-group" role="group" aria-label="Quick companion and chest actions">
       <button type="button" id="dogPetTrigger" class="ow-action-btn ow-action-dog">
         Pet Dog [B]
       </button>
       <button type="button" id="roastChestTrigger" class="ow-action-btn ow-action-chest">
         Roast Chest [R]
       </button>
+      <span class="ow-controls-hint">
+        WASD/Arrows: Walk · Space: Action · C: Dossier · B: Dog · R: Roast · 1-5: Biomes
+      </span>
     </div>
 
-    <p class="ow-controls-hint">
-      Walk: WASD or Left/Right Arrows · Travel: 1-5 · Dog: B · Chest: R
-    </p>
+    <div class="gba-ab-group" role="group" aria-label="Action buttons">
+      <button type="button" id="btnActionB" class="gba-ab-btn">
+        [B / Dog]
+      </button>
+      <button type="button" id="btnActionA" class="gba-ab-btn">
+        [A / Space]
+      </button>
+    </div>
   </div>
 </div>
 
 <script>
   import { initOverworld } from '../scripts/overworld-engine';
 
+  const wireFallbackDossierTrigger = () => {
+    const fallbackBtn = document.getElementById('fallbackOpenDossier');
+    if (!fallbackBtn || fallbackBtn.dataset.wired === '1') return;
+    fallbackBtn.dataset.wired = '1';
+    fallbackBtn.addEventListener('click', () => {
+      const terminal = (window as unknown as {
+        CharacterDossierTerminal?: { open?: (tabId?: string) => void };
+      }).CharacterDossierTerminal;
+      terminal?.open?.('status');
+    });
+  };
+
   const bootOverworld = () => {
-    void initOverworld();
+    wireFallbackDossierTrigger();
+    try {
+      void Promise.resolve(initOverworld()).catch((err) => {
+        if ((window as unknown as { __RASS_OVERWORLD_DEBUG__?: boolean }).__RASS_OVERWORLD_DEBUG__) {
+          console.warn('[OverworldStage] Engine init failed; accessible fallback remains active.', err);
+        }
+      });
+    } catch (err) {
+      if ((window as unknown as { __RASS_OVERWORLD_DEBUG__?: boolean }).__RASS_OVERWORLD_DEBUG__) {
+        console.warn('[OverworldStage] Sync engine boot error; accessible fallback remains active.', err);
+      }
+    }
   };
 
   if (document.readyState === 'loading') {
@@ -156,272 +272,17 @@
 
 <style>
   /*
-   * OverworldStage internal styling: frames the PixiJS viewport and HUD cleanly
-   * while leaving mobile sticky shell positioning (.overworld-shell) to global.css.
+   * Minimal :where() styling complements global.css without specificity conflicts.
    */
-  .overworld-stage {
-    max-width: 1200px;
-    margin: 16px auto 24px;
-    border: 3px solid rgba(56, 199, 231, 0.55);
-    background: linear-gradient(180deg, rgba(16, 32, 46, 0.96), rgba(10, 18, 24, 0.98));
-    box-shadow:
-      inset 0 0 0 3px rgba(0, 0, 0, 0.78),
-      0 10px 26px rgba(0, 0, 0, 0.5);
-    padding: 10px 12px;
-  }
-
-  .overworld-bezel-top {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px 12px;
-    margin-bottom: 8px;
-  }
-
-  .ow-status-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px;
-    min-width: 0;
-  }
-
-  .ow-badge-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    color: var(--gold, #FFD166);
-    padding: 4px 7px;
-    background: #0d151c;
-    border: 2px solid rgba(255, 209, 102, 0.55);
-  }
-
-  .ow-zone-readout {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 10px;
-    color: var(--fg, #ffffff);
-  }
-
-  .ow-renderer-badge {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    text-transform: uppercase;
-    padding: 4px 6px;
-    color: #0a1218;
-    background: var(--cyan, #38C7E7);
-    border: 2px solid #000000;
-  }
-
-  .ow-renderer-badge[data-backend='webgl'] {
-    background: var(--cream, #F4E3C3);
-  }
-
-  .ow-renderer-badge[data-backend='static'] {
-    background: #a2c4d6;
-  }
-
-  .ow-tool-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .ow-tool-btn,
-  .ow-travel-btn,
-  .ow-action-btn {
-    appearance: none;
-    cursor: pointer;
-    min-block-size: 36px;
-    padding: 6px 10px;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 9px;
-    line-height: 1.3;
-    color: var(--fg, #ffffff);
-    background: #132535;
-    border: 2px solid rgba(56, 199, 231, 0.5);
-    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.65), 0 3px 0 #000000;
-  }
-
-  @media (pointer: coarse) {
-    .ow-tool-btn,
-    .ow-travel-btn,
-    .ow-action-btn {
-      min-block-size: 44px;
-    }
-  }
-
-  @media (prefers-reduced-motion: no-preference) {
-    .ow-tool-btn,
-    .ow-travel-btn,
-    .ow-action-btn {
-      transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
-    }
-  }
-
-  @media (hover: hover) {
-    .ow-tool-btn:hover,
-    .ow-travel-btn:hover,
-    .ow-action-btn:hover {
-      border-color: var(--gold, #FFD166);
-      transform: translateY(-1px);
-    }
-  }
-
-  .ow-tool-btn:focus-visible,
-  .ow-travel-btn:focus-visible,
-  .ow-action-btn:focus-visible {
-    outline: 3px solid var(--cyan, #38C7E7);
-    outline-offset: 2px;
-  }
-
-  .ow-tool-btn[data-muted='true'] {
-    background: #2b2b2b;
-    border-color: var(--red, #C12E28);
-    color: var(--cream, #F4E3C3);
-  }
-
-  .overworld-viewport {
-    position: relative;
-    border: 3px solid #000000;
-    box-shadow: inset 0 0 0 2px rgba(56, 199, 231, 0.3);
-    background: #0a1218;
-    overflow: hidden;
-  }
-
-  .overworld-canvas-host {
-    position: relative;
-    width: 100%;
-    height: clamp(220px, 32vw, 320px);
-    min-height: 200px;
-  }
-
-  .overworld-fallback {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: 8px;
-    height: 100%;
-    padding: 16px;
-    color: var(--cream, #F4E3C3);
-    background: linear-gradient(180deg, #1C3B54 0%, #0a1218 100%);
-  }
-
-  .overworld-stage.is-mounted .overworld-fallback {
-    display: none;
-  }
-
-  .ow-fallback-title {
-    margin: 0;
-    font-family: 'Press Start 2P', monospace;
+  :where(.ow-controls-hint) {
     font-size: 11px;
-    color: var(--gold, #FFD166);
+    color: #94a3b8;
+    white-space: nowrap;
   }
 
-  .ow-fallback-copy {
-    margin: 0;
-    font-size: 14px;
-    line-height: 1.5;
-    max-inline-size: 68ch;
-  }
-
-  .overworld-hud {
+  :where(.ow-fallback-actions) {
     display: flex;
     flex-wrap: wrap;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px 12px;
-    margin-top: 8px;
-  }
-
-  .ow-travel-nav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .ow-travel-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  .ow-travel-btn.is-active,
-  .ow-travel-btn[aria-current='true'] {
-    background: var(--primary, #1C3B54);
-    border-color: var(--gold, #FFD166);
-    color: var(--gold, #FFD166);
-  }
-
-  .ow-key-cap {
-    display: inline-grid;
-    place-items: center;
-    min-inline-size: 16px;
-    padding: 2px 3px;
-    background: #0a1218;
-    border: 1px solid rgba(56, 199, 231, 0.55);
-    color: var(--cyan, #38C7E7);
-    font-size: 8px;
-  }
-
-  .ow-actions {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .ow-action-dog {
-    border-color: rgba(244, 227, 195, 0.65);
-    color: var(--cream, #F4E3C3);
-  }
-
-  .ow-action-chest {
-    background: #531715;
-    border-color: var(--red, #C12E28);
-    color: #ffffff;
-  }
-
-  .ow-controls-hint {
-    margin: 0;
-    font-size: 12px;
-    color: #a2c4d6;
-  }
-
-  @media (max-width: 900px) {
-    .overworld-canvas-host {
-      height: clamp(148px, 24dvh, 200px);
-      min-height: 148px;
-    }
-
-    .ow-controls-hint {
-      display: none;
-    }
-
-    .ow-travel-nav {
-      overflow-x: auto;
-      flex-wrap: nowrap;
-      max-width: 100%;
-      padding-bottom: 2px;
-    }
-
-    .ow-travel-btn {
-      flex: 0 0 auto;
-    }
-  }
-
-  @media (forced-colors: active) {
-    .overworld-stage,
-    .overworld-viewport,
-    .ow-tool-btn,
-    .ow-travel-btn,
-    .ow-action-btn {
-      border-color: ButtonText;
-      color: ButtonText;
-    }
-
-    .ow-travel-btn[aria-current='true'] {
-      border-color: Highlight;
-      color: Highlight;
-    }
+    gap: 8px;
   }
 </style>

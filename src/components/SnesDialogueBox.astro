@@ -1,0 +1,574 @@
+---
+/**
+ * Path: src/components/SnesDialogueBox.astro
+ * Purpose: Universal SNES 16-bit RPG dialogue overlay (`#snesDialogueBox`),
+ *          floating hotspot interaction pill (`#interactionPrompt`), and
+ *          companion morale status toast (`#moraleToast`) rendered inside
+ *          `.overworld-viewport`.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Hidden by default during the `[EXPLORING]` FSM state via the native `hidden`
+ *   attribute so the pixel-art overworld stage remains unobstructed.
+ * - Uses `:global(...)` for elements dynamically hydrated inside `#snesChoiceList`
+ *   and `#snesInspectorContent` by `src/scripts/overworld-engine.ts`.
+ * - Includes an always-mounted `.visually-hidden` `aria-live="polite"` announcer
+ *   plus optional `document.ariaNotify()` support for accessible toast announcements.
+ */
+---
+
+<!-- Floating Hotspot Proximity Prompt Pill (shown in EXPLORING state when near a hotspot) -->
+<button
+  type="button"
+  id="interactionPrompt"
+  class="interaction-prompt"
+  hidden
+>
+  <span class="interaction-prompt-key" aria-hidden="true">SPACE / A</span>
+  <span id="interactionPromptLabel" class="interaction-prompt-label">Inspect Hotspot</span>
+</button>
+
+<!-- Companion Morale Status Toast (+10 Morale Restored when petting White Dog) -->
+<div
+  id="moraleToast"
+  class="morale-toast"
+  role="status"
+  aria-label="Morale notification"
+  hidden
+>
+  <span class="morale-toast-icon" aria-hidden="true">&#9829;</span>
+  <span id="moraleToastText" class="morale-toast-text">+10 Morale Restored</span>
+  <button
+    type="button"
+    id="moraleToastClose"
+    class="morale-toast-close"
+    aria-label="Dismiss morale notification"
+  >
+    &times;
+  </button>
+</div>
+
+<!-- Persistent non-hidden live region for screen-reader status announcements -->
+<span
+  id="overworldLiveRegion"
+  class="visually-hidden"
+  aria-live="polite"
+  aria-atomic="true"
+></span>
+
+<!-- Universal SNES 16-bit RPG Dialogue & Inspector Window -->
+<section
+  id="snesDialogueBox"
+  class="snes-dialogue-box"
+  aria-labelledby="snesDialogueTitle"
+  aria-describedby="snesDialogueText"
+  hidden
+>
+  <header class="snes-dialogue-header">
+    <div class="snes-title-cluster">
+      <h2 id="snesDialogueTitle" class="snes-dialogue-title">
+        SANCTUARY CITADEL · CAMPFIRE
+      </h2>
+      <div class="snes-speaker-row">
+        <span class="snes-speaker-glyph" aria-hidden="true">&#9654;</span>
+        <span id="snesSpeakerName" class="snes-speaker-name">Boris (Level 39 Sherpa)</span>
+      </div>
+    </div>
+    <span id="snesStatePill" class="snes-state-pill">DIALOGUE</span>
+  </header>
+
+  <div class="snes-dialogue-body">
+    <p id="snesDialogueText" class="snes-dialogue-text"></p>
+
+    <!-- Rich inline inspector for Relic Vault, Hall of Eras, Trophy Armory, and Signal Beacon -->
+    <div id="snesInspectorContent" class="snes-inspector-content" hidden></div>
+
+    <!-- Interactive choice buttons and prev/next carousel controls -->
+    <div
+      id="snesChoiceList"
+      class="snes-choice-list"
+      role="group"
+      aria-label="Dialogue options"
+      hidden
+    ></div>
+  </div>
+
+  <footer class="snes-dialogue-footer snes-dialogue-actions">
+    <button
+      type="button"
+      id="snesContinueBtn"
+      class="snes-btn snes-btn-primary snes-footer-btn"
+    >
+      Advance [SPACE / ENTER]
+    </button>
+    <button
+      type="button"
+      id="snesCloseBtn"
+      class="snes-btn snes-btn-secondary snes-footer-btn"
+    >
+      Close [ESC / B]
+    </button>
+  </footer>
+</section>
+
+<style>
+  /* Compact floating proximity prompt inside .overworld-viewport */
+  .interaction-prompt {
+    position: absolute;
+    left: 50%;
+    bottom: 14px;
+    transform: translateX(-50%);
+    z-index: 22;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    min-block-size: 34px;
+    padding: 6px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.35;
+    color: #f8fafc;
+    background: linear-gradient(180deg, rgba(23, 37, 84, 0.96) 0%, rgba(9, 13, 22, 0.98) 100%);
+    border: 2px solid #facc15;
+    box-shadow:
+      0 0 0 2px #090d16,
+      0 4px 14px rgba(0, 0, 0, 0.65);
+    cursor: pointer;
+    appearance: none;
+  }
+
+  .interaction-prompt[hidden] {
+    display: none;
+  }
+
+  .interaction-prompt-key {
+    padding: 2px 5px;
+    background: #090d16;
+    border: 1px solid #06b6d4;
+    color: #facc15;
+    font-size: 8px;
+    flex-shrink: 0;
+  }
+
+  .interaction-prompt-label {
+    color: #f4e3c3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .interaction-prompt:focus-visible {
+    outline: 3px solid #06b6d4;
+    outline-offset: 2px;
+  }
+
+  /* Companion morale status toast anchored top-right inside .overworld-viewport */
+  .morale-toast {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 26;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    max-width: calc(100% - 24px);
+    padding: 7px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.4;
+    color: #f4e3c3;
+    background: linear-gradient(180deg, #172554 0%, #090d16 100%);
+    border: 2px solid #facc15;
+    box-shadow:
+      inset 0 0 0 2px #f8fafc,
+      0 6px 16px rgba(0, 0, 0, 0.72);
+  }
+
+  .morale-toast[hidden] {
+    display: none;
+  }
+
+  .morale-toast-icon {
+    color: #facc15;
+    font-size: 12px;
+    line-height: 1;
+  }
+
+  .morale-toast-text {
+    color: #facc15;
+  }
+
+  .morale-toast-close {
+    appearance: none;
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 26px;
+    min-block-size: 26px;
+    padding: 0 4px;
+    margin-left: 2px;
+    background: #090d16;
+    color: #f8fafc;
+    border: 1px solid rgba(248, 250, 252, 0.55);
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+  }
+
+  .morale-toast-close:focus-visible {
+    outline: 3px solid #06b6d4;
+    outline-offset: 2px;
+  }
+
+  /* Classic SNES RPG Dialogue Box overlaid at the bottom of .overworld-viewport */
+  .snes-dialogue-box {
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: calc(100% - 20px);
+    padding: 12px 14px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    color: #f8fafc;
+    background: linear-gradient(180deg, rgba(23, 37, 84, 0.97) 0%, rgba(9, 13, 22, 0.98) 100%);
+    /* Double gold / white pixel border framing */
+    border: 3px solid #facc15;
+    outline: 2px solid #f8fafc;
+    outline-offset: -6px;
+    box-shadow:
+      0 0 0 3px #090d16,
+      0 12px 28px rgba(0, 0, 0, 0.82);
+  }
+
+  .snes-dialogue-box[hidden] {
+    display: none;
+  }
+
+  .snes-dialogue-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid rgba(250, 204, 21, 0.35);
+  }
+
+  .snes-title-cluster {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+  }
+
+  .snes-dialogue-title {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(9px, 1.3vw, 11px);
+    line-height: 1.45;
+    color: #facc15;
+    letter-spacing: 0.03em;
+  }
+
+  .snes-speaker-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.4;
+    color: #06b6d4;
+  }
+
+  .snes-speaker-glyph {
+    color: #f97316;
+    font-size: 9px;
+  }
+
+  .snes-state-pill {
+    flex-shrink: 0;
+    padding: 4px 8px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 1.3;
+    text-transform: uppercase;
+    color: #090d16;
+    background: #facc15;
+    border: 2px solid #f8fafc;
+  }
+
+  .snes-dialogue-body {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .snes-dialogue-text {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-size: clamp(13px, 1.35vw, 15px);
+    line-height: 1.55;
+    color: #f4e3c3;
+    white-space: pre-line;
+  }
+
+  .snes-inspector-content {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 8px 10px;
+    background: rgba(9, 13, 22, 0.78);
+    border: 2px solid rgba(6, 182, 212, 0.45);
+  }
+
+  .snes-inspector-content[hidden] {
+    display: none;
+  }
+
+  .snes-choice-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .snes-choice-list[hidden] {
+    display: none;
+  }
+
+  .snes-dialogue-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    padding-top: 4px;
+  }
+
+  .snes-btn,
+  .snes-choice-list :global(.snes-choice-btn),
+  .snes-inspector-content :global(.snes-inspector-link),
+  .snes-inspector-content :global(.snes-nav-btn) {
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    min-block-size: 34px;
+    padding: 6px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8.5px;
+    line-height: 1.35;
+    text-decoration: none;
+    cursor: pointer;
+    border: 2px solid #06b6d4;
+    background: #10203a;
+    color: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.7), 0 2px 0 #090d16;
+  }
+
+  .snes-btn-primary,
+  .snes-inspector-content :global(.snes-inspector-link) {
+    border-color: #facc15;
+    background: #1e3a8a;
+    color: #facc15;
+  }
+
+  .snes-btn-secondary {
+    border-color: rgba(248, 250, 252, 0.65);
+    background: #0f172a;
+    color: #f4e3c3;
+  }
+
+  @media (pointer: coarse) {
+    .interaction-prompt,
+    .snes-btn,
+    .morale-toast-close,
+    .snes-choice-list :global(.snes-choice-btn),
+    .snes-inspector-content :global(.snes-inspector-link),
+    .snes-inspector-content :global(.snes-nav-btn) {
+      min-block-size: 40px;
+    }
+  }
+
+  @media (hover: hover) {
+    .interaction-prompt:hover,
+    .snes-btn:hover,
+    .morale-toast-close:hover,
+    .snes-choice-list :global(.snes-choice-btn:hover),
+    .snes-inspector-content :global(.snes-inspector-link:hover),
+    .snes-inspector-content :global(.snes-nav-btn:hover) {
+      border-color: #facc15;
+      filter: brightness(1.12);
+    }
+  }
+
+  .snes-btn:focus-visible,
+  .snes-choice-list :global(.snes-choice-btn:focus-visible),
+  .snes-inspector-content :global(.snes-inspector-link:focus-visible),
+  .snes-inspector-content :global(.snes-nav-btn:focus-visible) {
+    outline: 3px solid #06b6d4;
+    outline-offset: 2px;
+  }
+
+  /* Dynamic inspector cards & badges rendered inside #snesInspectorContent */
+  .snes-inspector-content :global(.snes-inspector-meta) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-badge) {
+    display: inline-block;
+    padding: 3px 6px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    line-height: 1.3;
+    color: #f8fafc;
+    background: rgba(23, 37, 84, 0.9);
+    border: 1px solid #06b6d4;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-badge--gold) {
+    border-color: #facc15;
+    color: #facc15;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-badge--purple) {
+    border-color: #a855f7;
+    color: #e9d5ff;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-badge--copper) {
+    border-color: #ea580c;
+    color: #fed7aa;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-stats) {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #93c5fd;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-sub) {
+    margin: 0;
+    font-family: Inter, system-ui, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #e2e8f0;
+  }
+
+  .snes-inspector-content :global(.snes-inspector-actions) {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .snes-inspector-content :global(.snes-trophy-card) {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 10px;
+    background: rgba(23, 37, 84, 0.72);
+    border: 1px solid rgba(250, 204, 21, 0.55);
+  }
+
+  .snes-inspector-content :global(.snes-trophy-name) {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.4;
+    color: #facc15;
+  }
+
+  .snes-inspector-content :global(.snes-trophy-lore) {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    font-style: italic;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .interaction-prompt,
+    .morale-toast,
+    .snes-dialogue-box {
+      transition: opacity 0.14s ease, border-color 0.14s ease;
+    }
+  }
+
+  html[data-motion='paused'] .interaction-prompt,
+  html[data-motion='paused'] .morale-toast,
+  html[data-motion='paused'] .snes-dialogue-box {
+    transition: none !important;
+  }
+
+  @media (max-width: 900px) {
+    .snes-dialogue-box {
+      left: 6px;
+      right: 6px;
+      bottom: 6px;
+      max-height: calc(100% - 12px);
+      padding: 10px 10px;
+      gap: 6px;
+    }
+
+    .interaction-prompt {
+      bottom: 8px;
+      font-size: 8px;
+      padding: 5px 9px;
+    }
+
+    .morale-toast {
+      top: 8px;
+      right: 8px;
+      font-size: 8px;
+    }
+
+    .snes-btn,
+    .snes-choice-list :global(.snes-choice-btn) {
+      font-size: 8px;
+      padding: 6px 8px;
+    }
+  }
+
+  /* High-contrast / Forced Colors fallback using system keywords */
+  @media (forced-colors: active) {
+    .interaction-prompt,
+    .morale-toast,
+    .snes-dialogue-box,
+    .snes-inspector-content {
+      background: Canvas;
+      color: CanvasText;
+      border: 2px solid CanvasText;
+      outline: 1px solid CanvasText;
+    }
+
+    .snes-state-pill,
+    .interaction-prompt-key {
+      background: Highlight;
+      color: HighlightText;
+      border-color: CanvasText;
+    }
+
+    .snes-btn,
+    .morale-toast-close,
+    .snes-choice-list :global(.snes-choice-btn),
+    .snes-inspector-content :global(.snes-inspector-link),
+    .snes-inspector-content :global(.snes-nav-btn) {
+      background: ButtonFace;
+      color: ButtonText;
+      border: 2px solid ButtonText;
+    }
+  }
+</style>

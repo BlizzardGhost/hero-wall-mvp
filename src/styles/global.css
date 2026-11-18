@@ -1,58 +1,90 @@
 /*
  * Path: src/styles/global.css
- * Purpose: Global theme tokens, RPG world panels, native top-layer <dialog> styles,
- *          desktop Overworld framing, and @media (max-width: 900px) sticky Game Boy dual-screen layout.
- * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ * Purpose: SPEC-021 Pure 16-Bit RPG Overworld visual system, zero-document-scroll viewport lock
+ *          (100vw x 100dvh, overflow: hidden), SNES color palette tokens, desktop widescreen CRT
+ *          framing, mobile Game Boy Advance / Color dual-stage (58dvh / 42dvh) layout, SNES
+ *          dialogue window styling, native top-layer <dialog> & focusgroup tablist styling,
+ *          pixelated gold portrait bezel, and WCAG 2.2.2 motion pause rules.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Zero document scroll is enforced on html/body (`overflow: hidden; height: 100dvh;`).
+ *   All scrolling happens inside bounded top-layer modals or overlay dialogue inspectors.
+ * - `dialog::backdrop` sets `overflow: hidden` explicitly because `::backdrop` is not a scroll
+ *   container by default and would otherwise ignore `overscroll-behavior: contain`.
+ * - `[hidden]:not([hidden="until-found"])` avoids clobbering `content-visibility: hidden` on
+ *   find-in-page-searchable tab panels inside CharacterDossier.
  */
-:root{
-  --primary:#1C3B54; /* Armor Blue */
-  --cyan:#38C7E7;    /* Hologram */
-  --red:#C12E28;     /* Ms Devil */
-  --cream:#F4E3C3;   /* Dog */
-  --sky:#4DB6E2;
-  --gold:#FFD166;
-  --emerald:#06D6A0;
-  --charcoal:#2B2B2B;
-  --bg:#0a1218;
-  --fg:#ffffff;
 
-  /* Material Design 3 Surface & Elevation System */
-  --md-sys-color-surface: #0e1720;
-  --md-sys-color-surface-dim: #0a1118;
-  --md-sys-color-surface-container-low: rgba(18, 32, 45, 0.6);
-  --md-sys-color-surface-container: rgba(24, 44, 62, 0.7);
-  --md-sys-color-surface-container-high: rgba(30, 56, 80, 0.85);
-  --md-sys-color-surface-container-highest: rgba(38, 70, 98, 0.95);
-  --md-sys-color-outline: rgba(56, 199, 231, 0.25);
-  --md-sys-color-outline-variant: rgba(56, 199, 231, 0.12);
-  --md-sys-color-primary: #38C7E7;
-  --md-sys-color-on-primary: #003642;
-  --md-sys-color-on-surface: #e2f0fa;
-  --md-sys-color-on-surface-variant: #a2c4d6;
+:root {
+  /* Canonical SPEC-021 SNES 16-bit palette */
+  --snes-amber: #f97316;
+  --snes-grass: #15803d;
+  --snes-rune-purple: #a855f7;
+  --snes-forge-copper: #ea580c;
+  --snes-star-cyan: #06b6d4;
+  --snes-obsidian: #090d16;
+  --snes-gold: #facc15;
+  --snes-navy-top: #172554;
+  --snes-navy-bottom: #090d16;
+  --snes-cream: #F4E3C3;
 
-  /* MD3 Elevation Tokens */
-  --md-elevation-1: 0 1px 3px 1px rgba(0, 0, 0, 0.15), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --md-elevation-2: 0 2px 6px 2px rgba(0, 0, 0, 0.2), 0 1px 2px 0 rgba(0, 0, 0, 0.3);
-  --md-elevation-3: 0 4px 12px 3px rgba(0, 0, 0, 0.3), 0 1px 3px 0 rgba(0, 0, 0, 0.4);
-  --md-elevation-4: 0 8px 24px 4px rgba(0, 0, 0, 0.4), 0 2px 4px 0 rgba(0, 0, 0, 0.5);
-
-  /* Shape Tokens */
-  --md-shape-corner-small: 8px;
-  --md-shape-corner-medium: 12px;
-  --md-shape-corner-large: 16px;
-  --md-shape-corner-full: 9999px;
+  /* Semantic UI tokens */
+  --bg: var(--snes-obsidian);
+  --fg: #f8fafc;
+  --muted: #94a3b8;
+  --primary: #1C3B54;
+  --cyan: var(--snes-star-cyan);
+  --gold: var(--snes-gold);
+  --amber: var(--snes-amber);
+  --grass: var(--snes-grass);
+  --purple: var(--snes-rune-purple);
+  --copper: var(--snes-forge-copper);
+  --cream: var(--snes-cream);
+  --red: #dc2626;
+  --emerald: #10b981;
+  --active-accent: var(--snes-amber);
 }
-*{box-sizing:border-box}
-/* Use overflow-x: clip instead of hidden on html/body so mobile position: sticky
-   on the Game Boy upper viewport stays active without creating a root scroll container. */
-html,body{margin:0;padding:0;max-width:100%;overflow-x:clip;background:var(--bg);color:var(--fg);font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial}
-img{image-rendering: pixelated}
-a{color:var(--fg);text-decoration:none}
-.container{max-width:1200px;margin:0 auto;padding:24px}
-.row{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
-.grid{display:grid;gap:18px}
 
-/* Accessibility utility & skip link */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+/* CRITICAL: Pure Game Viewport Lock - zero long-page document scroll on desktop or mobile */
+html,
+body {
+  width: 100vw;
+  height: 100dvh;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background: #090d16;
+  color: #f8fafc;
+  font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  image-rendering: pixelated;
+}
+
+img {
+  image-rendering: pixelated;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  font: inherit;
+}
+
+/* Preserve hidden="until-found" find-in-page behavior while hiding ordinary [hidden] elements */
+[hidden]:not([hidden="until-found"]) {
+  display: none !important;
+}
+
+/* Accessibility utilities */
 .visually-hidden:where(:not(:focus-within, :active)) {
   position: absolute !important;
   clip-path: inset(50%) !important;
@@ -64,550 +96,1672 @@ a{color:var(--fg);text-decoration:none}
   border: 0 !important;
   white-space: nowrap !important;
 }
+
 .skip-link:focus-visible {
   position: fixed;
-  top: 12px;
-  left: 12px;
-  z-index: 200;
+  top: 10px;
+  left: 10px;
+  z-index: 300;
   padding: 10px 14px;
-  background: var(--primary);
-  color: #fff;
-  border: 2px solid var(--cyan);
+  background: var(--snes-navy-top);
+  color: #f8fafc;
+  border: 2px solid var(--snes-gold);
   font-family: 'Press Start 2P', monospace;
-  font-size: 11px;
+  font-size: 10px;
 }
 
-/* Sticky nav */
-header{position:sticky;top:0;z-index:50;background:transparent;transition:background .2s ease,border-color .2s ease}
-header.scrolled{background:var(--primary);border-bottom:2px solid rgba(56,199,231,.25)}
-nav a{font-family:'Press Start 2P'; font-size:12px; margin:0 10px; padding:12px 6px; border-bottom:2px solid transparent}
-nav a:hover{border-bottom-color:var(--cyan); text-shadow:0 0 8px var(--cyan)}
-
-/* HERO: F-pattern layout */
-.hero{
-  position:relative;
-  min-height:66dvh;
-  display:flex;
-  align-items:center;
-  justify-content:flex-start;
-}
-.hero::before{
-  content:"";
-  position:absolute; inset:0;
-  background:url('/img/hero.png') center/cover no-repeat;
-  filter:saturate(1.05) contrast(1.02);
-}
-.hero::after{
-  content:"";
-  position:absolute; inset:0;
-  background:
-    linear-gradient(90deg, rgba(12,24,32,.82) 0%, rgba(12,24,32,.48) 36%, rgba(12,24,32,.14) 56%, transparent 72%),
-    linear-gradient(180deg, transparent 60%, rgba(10,18,24,.94) 100%);
-}
-.hero-content{
-  position:relative; z-index:1;
-  display:grid;
-  grid-template-columns:minmax(300px,620px) 1fr;
-  gap:2rem;
-  align-items:center;
-  max-width:1200px;
-  margin-left:clamp(16px,5vw,72px);
-  margin-right:auto;
-  padding:2rem 1.5rem;
-  justify-items:start;
-}
-.hero-text{ grid-column:1; text-align:left; padding-right: clamp(24px, 10vw, 180px); }
-.hero-text .title{
-  font-family:'Press Start 2P', system-ui;
-  font-size:clamp(22px,3.2vw,42px);
-  line-height:1.2;
-  letter-spacing:0;
-  margin:0 0 12px;
-  text-shadow:0 2px 0 #000, 0 0 10px rgba(0,0,0,.35);
-}
-.hero-text .subtitle{ color:#d3e7f3; max-width:58ch; line-height:1.55; text-shadow:0 1px 0 #000; }
-.hero-ctas{ display:flex; flex-wrap:wrap; gap:12px; margin-top:16px; }
-
-@media (min-width: 901px){
-  .hero-text{ padding-right:min(14vw, 180px); }
-}
-@media (max-width: 900px){
-  .hero{ min-height:48dvh; }
-  .hero-content{ grid-template-columns: 1fr; margin-left: 0; padding: 1.5rem 1rem; }
-  .hero-text{ padding-right: 0; }
-  .hero-text .title{ font-size:clamp(20px, 6.8vw, 34px); }
+:where(a:any-link, button, input, [tabindex]):focus-visible {
+  outline: 3px solid var(--snes-star-cyan);
+  outline-offset: 2px;
 }
 
-.title{font-family:'Press Start 2P', system-ui; font-size:clamp(20px,3.2vw,40px); line-height:1.2; margin:0 0 10px}
-.subtitle{color:#d3e7f3;max-width:70ch}
-.btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  min-height:44px;
-  padding:12px 16px;
-  border:3px solid #000;
-  box-shadow:0 4px 0 #000;
-  font-family:'Press Start 2P';
-  font-size:11px;
-  cursor:pointer;
-}
-.btn.primary{background:var(--red);color:#fff}
-.btn.secondary{background:rgba(12, 24, 34, 0.72);color:#fff;border-color:var(--cyan)}
-.btn.ghost{background:rgba(28, 59, 84, 0.65);color:var(--gold);border-color:var(--gold)}
-.btn:hover{filter:brightness(1.08); text-shadow:0 0 10px var(--cyan)}
-
-/* Sections */
-section.card{background:rgba(28,59,84,.1); border:2px solid rgba(56,199,231,.3); padding:18px}
-.pixel-border{outline:4px solid #000; box-shadow:0 0 0 4px rgba(56,199,231,.2) inset}
-
-/* Pixel Space Awesome Cursor */
+/* Pixel Sword / Cursor treatment */
 body {
   cursor: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 512 512' transform='rotate(315)'>\
+<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 512 512' transform='rotate(315)'>\
 <path fill='%23FFFFFF' stroke='%23000000' stroke-width='28' d='M96 256h32v256H0V352h32v-32h32v-32h32zm416 96v160H384V256h32v32h32v32h32v32zM320 64h32v384h-32v-32H192v32h-32V64h32V32h32V0h64v32h32zm-32 64h-64v64h64z'/>\
-<path fill='%23FFFFFF' stroke='%2338C7E7' stroke-width='20' d='M96 256h32v256H0V352h32v-32h32v-32h32zm416 96v160H384V256h32v32h32v32h32v32zM320 64h32v384h-32v-32H192v32h-32V64h32V32h32V0h64v32h32zm-32 64h-64v64h64z'/>\
+<path fill='%23facc15' stroke='%2306b6d4' stroke-width='20' d='M96 256h32v256H0V352h32v-32h32v-32h32zm416 96v160H384V256h32v32h32v32h32v32zM320 64h32v384h-32v-32H192v32h-32V64h32V32h32V0h64v32h32zm-32 64h-64v64h64z'/>\
 </svg>") 0 0, auto;
 }
-a, button, summary, [role="tab"] { cursor: pointer; }
 
-html {
-  image-rendering: pixelated;
-  scroll-behavior: smooth;
-}
-@media (prefers-reduced-motion: reduce) {
-  html { scroll-behavior: auto; }
+a,
+button,
+label,
+[role="tab"] {
+  cursor: pointer;
 }
 
-/* ===== WORLD & OVERWORLD DESKTOP / MOBILE GAME BOY LAYOUT ===== */
-.parallax { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-.parallax .layer { position: absolute; inset: 0; }
-.parallax .mountains {
+/* ============================================================================
+ * 1. DESKTOP (> 900px) WIDESCREEN 16-BIT CRT FULL-VIEWPORT LAYOUT
+ * ============================================================================ */
+.game-viewport-root {
+  width: 100%;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
   background:
-    radial-gradient(80% 50% at 50% 120%, rgba(28,59,84,.7), transparent 70%),
-    linear-gradient(#0a1218,#0a1218);
-  mask: radial-gradient(120% 100% at 50% 120%, black 50%, transparent 60%);
-  opacity:.45;
-  transform: translateY(calc(var(--scroll,0) * 0.15px));
+    radial-gradient(ellipse at 50% 0%, rgba(23, 37, 84, 0.45), transparent 65%),
+    #090d16;
 }
-.parallax .clouds {
-  background-image:
-    url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='64' height='32'>\
-<rect width='64' height='32' fill='transparent'/>\
-<path d='M6 20 h10 v-6 h8 v6 h12 v-4 h10 v4 h8 v2 H6 z' fill='%235e90aa' opacity='.25'/>\
-</svg>");
-  background-repeat: repeat;
-  background-size: 128px 64px;
-  opacity:.20;
-  transform: translateY(calc(var(--scroll,0) * 0.35px));
-}
-.section { position: relative; z-index: 1; margin: 28px auto; }
-.section .inner { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
 
-/* Desktop atmospheric Overworld viewport */
+.overworld-stage,
 .overworld-shell,
 #overworldStage.overworld-shell {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  height: 100dvh;
+  margin: 0;
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
   position: relative;
-  z-index: 20;
-  max-width: 1200px;
-  margin: 18px auto 28px;
-  padding: 14px 16px;
-  background: linear-gradient(180deg, rgba(19, 36, 52, 0.96) 0%, rgba(10, 18, 26, 0.98) 100%);
-  border: 2px solid rgba(56, 199, 231, 0.42);
-  border-radius: 14px;
-  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), inset 0 0 0 3px rgba(0, 0, 0, 0.55);
+  background: linear-gradient(180deg, #0f172a 0%, #090d16 100%);
+  border: 3px solid #1e293b;
+  box-shadow:
+    inset 0 0 0 2px rgba(250, 204, 21, 0.18),
+    inset 0 0 40px rgba(0, 0, 0, 0.8);
 }
 
-/* Mobile Game Boy dual-screen layout: sticky top viewport + tactile bezel above scrollable zone cards */
+/* Dynamic active-biome accent token */
+#overworldStage[data-zone-active="sanctuary"] { --active-accent: var(--snes-amber); }
+#overworldStage[data-zone-active="eras"] { --active-accent: var(--snes-rune-purple); }
+#overworldStage[data-zone-active="relics"] { --active-accent: var(--snes-forge-copper); }
+#overworldStage[data-zone-active="trophies"] { --active-accent: var(--snes-gold); }
+#overworldStage[data-zone-active="beacon"] { --active-accent: var(--snes-star-cyan); }
+
+/* Compact Top HUD Bar */
+.overworld-bezel-top {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px 10px;
+  padding: 6px 10px;
+  background: linear-gradient(180deg, rgba(23, 37, 84, 0.92), rgba(9, 13, 22, 0.96));
+  border: 2px solid color-mix(in srgb, var(--active-accent) 60%, #1e293b);
+  border-radius: 6px;
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.7);
+}
+
+.ow-status-group,
+.ow-tool-group,
+.ow-travel-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ow-char-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(9, 13, 22, 0.85);
+  border: 2px solid var(--snes-gold);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-gold);
+  white-space: nowrap;
+}
+
+.ow-char-vitals {
+  font-size: 8px;
+  color: #cbd5e1;
+  font-variant-numeric: tabular-nums;
+}
+
+.ow-zone-readout {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #f8fafc;
+  white-space: nowrap;
+}
+
+.ow-state-badge,
+#gameStateBadge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 4px 6px;
+  background: rgba(6, 182, 212, 0.16);
+  border: 1px solid var(--snes-star-cyan);
+  color: var(--snes-star-cyan);
+  border-radius: 3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.ow-renderer-badge,
+#rendererBadge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  text-transform: uppercase;
+  padding: 4px 6px;
+  color: #090d16;
+  background: var(--snes-star-cyan);
+  border: 2px solid #000;
+  white-space: nowrap;
+}
+
+.ow-renderer-badge[data-backend="webgl"],
+#rendererBadge[data-backend="webgl"] {
+  background: var(--snes-cream);
+}
+
+.ow-renderer-badge[data-backend="canvas"],
+.ow-renderer-badge[data-backend="static"],
+#rendererBadge[data-backend="canvas"],
+#rendererBadge[data-backend="static"] {
+  background: var(--snes-amber);
+  color: #090d16;
+}
+
+.ow-tool-btn,
+.ow-travel-btn,
+.ow-action-btn {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-block-size: 32px;
+  padding: 5px 9px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8.5px;
+  line-height: 1.25;
+  color: #f8fafc;
+  background: #132038;
+  border: 2px solid rgba(6, 182, 212, 0.45);
+  box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.65), 0 2px 0 #000;
+  white-space: nowrap;
+  touch-action: manipulation;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ow-tool-btn,
+  .ow-travel-btn,
+  .ow-action-btn,
+  .gba-btn {
+    transition: transform 0.1s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+}
+
+@media (hover: hover) {
+  .ow-tool-btn:hover,
+  .ow-travel-btn:hover,
+  .ow-action-btn:hover {
+    border-color: var(--snes-gold);
+    transform: translateY(-1px);
+  }
+}
+
+.ow-travel-btn.is-active,
+.ow-travel-btn[aria-current="true"] {
+  background: #1e293b;
+  border-color: var(--active-accent);
+  color: var(--snes-gold);
+}
+
+.ow-tool-btn[data-muted="true"] {
+  background: #3b1219;
+  border-color: #ef4444;
+  color: var(--snes-cream);
+}
+
+.ow-key-cap {
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 15px;
+  padding: 1px 3px;
+  background: #090d16;
+  border: 1px solid rgba(250, 204, 21, 0.55);
+  color: var(--snes-gold);
+  font-size: 8px;
+}
+
+/* Primary Live Overworld Game Screen */
+.overworld-viewport {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  background: #090d16;
+  border: 3px solid #000;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb, var(--active-accent) 45%, #000),
+    0 8px 24px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+}
+
+/* Subtle CRT scanline veneer on viewport without blocking pointer input */
+.overworld-viewport::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 12;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.14) 3px,
+    rgba(0, 0, 0, 0.14) 4px
+  );
+  opacity: 0.45;
+}
+
+.overworld-canvas-host,
+#overworldCanvasHost {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+#overworldCanvasHost canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
+.overworld-fallback {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 10px;
+  width: 100%;
+  height: 100%;
+  padding: 20px;
+  color: var(--snes-cream);
+  background: linear-gradient(180deg, var(--snes-navy-top) 0%, var(--snes-obsidian) 100%);
+}
+
+.overworld-stage.is-mounted .overworld-fallback {
+  display: none;
+}
+
+.ow-fallback-title {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--snes-gold);
+}
+
+.ow-fallback-copy {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  max-inline-size: 64ch;
+}
+
+/* ============================================================================
+ * 2. UNIVERSAL SNES RPG DIALOGUE BOX & FLOATING INTERACTION PROMPTS
+ * ============================================================================ */
+.snes-dialogue-box,
+#snesDialogueBox {
+  position: absolute;
+  inset-inline: clamp(10px, 2.5vw, 26px);
+  inset-block-end: clamp(10px, 2vh, 20px);
+  z-index: 30;
+  max-height: calc(100% - 22px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #172554 0%, #090d16 100%);
+  color: #f8fafc;
+  border: 3px solid #f8fafc;
+  outline: 3px solid #000;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 3px var(--snes-gold),
+    0 12px 32px rgba(0, 0, 0, 0.9);
+}
+
+.snes-dialogue-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+  border-bottom: 2px solid rgba(250, 204, 21, 0.35);
+}
+
+.snes-dialogue-title,
+#snesDialogueTitle {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--snes-gold);
+  letter-spacing: 0.4px;
+}
+
+.snes-speaker-name,
+#snesSpeakerName {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-star-cyan);
+}
+
+.snes-state-pill,
+#snesStatePill {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  padding: 3px 6px;
+  background: rgba(249, 115, 22, 0.2);
+  border: 1px solid var(--snes-amber);
+  color: var(--snes-cream);
+  border-radius: 3px;
+}
+
+.snes-dialogue-text,
+#snesDialogueText {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #f8fafc;
+  min-height: 2.2em;
+}
+
+.snes-inspector-content,
+#snesInspectorContent {
+  margin-top: 10px;
+  padding: 10px 12px;
+  background: rgba(9, 13, 22, 0.72);
+  border: 2px solid rgba(6, 182, 212, 0.4);
+  border-radius: 4px;
+}
+
+.snes-choice-list,
+#snesChoiceList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.snes-choice-btn,
+.snes-footer-btn {
+  appearance: none;
+  min-height: 36px;
+  padding: 7px 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #f8fafc;
+  background: #1e293b;
+  border: 2px solid var(--snes-gold);
+  box-shadow: 0 3px 0 #000;
+  touch-action: manipulation;
+}
+
+.snes-choice-btn:hover,
+.snes-footer-btn:hover {
+  background: #1d4ed8;
+  border-color: #ffffff;
+}
+
+.snes-dialogue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(248, 250, 252, 0.16);
+}
+
+.interaction-prompt,
+#interactionPrompt {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  z-index: 24;
+  padding: 7px 12px;
+  background: rgba(9, 13, 22, 0.92);
+  border: 2px solid var(--snes-gold);
+  box-shadow: 0 4px 0 #000, 0 0 16px rgba(250, 204, 21, 0.3);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-gold);
+  white-space: nowrap;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.morale-toast,
+#moraleToast {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 32;
+  padding: 8px 12px;
+  background: linear-gradient(180deg, #15803d, #064e3b);
+  border: 2px solid var(--snes-gold);
+  box-shadow: 0 4px 0 #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-cream);
+}
+
+/* ============================================================================
+ * 3. BOTTOM CONTROLLER / GBA TACTILE DECK (Desktop Strip -> Mobile 42dvh Deck)
+ * ============================================================================ */
+.gba-controller-deck {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, #172033 0%, #0d1322 100%);
+  border: 2px solid #26344d;
+  border-radius: 6px;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.06);
+  user-select: none;
+}
+
+.gba-dpad-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 34px);
+  grid-template-rows: repeat(3, 30px);
+  gap: 2px;
+  align-items: center;
+  justify-items: center;
+}
+
+#dpadUp { grid-column: 2; grid-row: 1; }
+#dpadLeft { grid-column: 1; grid-row: 2; }
+#dpadRight { grid-column: 3; grid-row: 2; }
+#dpadDown { grid-column: 2; grid-row: 3; }
+
+.gba-dpad-center {
+  grid-column: 2;
+  grid-row: 2;
+  width: 100%;
+  height: 100%;
+  background: #1e293b;
+  border: 1px solid #000;
+}
+
+.gba-dpad-btn {
+  appearance: none;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  background: #283548;
+  color: #f8fafc;
+  border: 2px solid #000;
+  border-radius: 4px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 2px 0 #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  touch-action: manipulation;
+}
+
+.gba-dpad-btn:active,
+.gba-ab-btn:active,
+.gba-sys-btn:active {
+  transform: translateY(2px);
+  box-shadow: none;
+}
+
+.gba-system-group,
+.gba-ab-group,
+.gba-quick-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.gba-sys-btn {
+  appearance: none;
+  min-height: 32px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 2px solid #000;
+  background: #334155;
+  color: var(--snes-cream);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  box-shadow: 0 2px 0 #000;
+  touch-action: manipulation;
+}
+
+.gba-ab-btn {
+  appearance: none;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 2px solid #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #ffffff;
+  box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.25), 0 3px 0 #000;
+  touch-action: manipulation;
+}
+
+#btnActionA {
+  background: #b91c1c;
+  border-color: #000;
+}
+
+#btnActionB {
+  background: #b45309;
+  border-color: #000;
+}
+
+.ow-action-dog,
+#dogPetTrigger {
+  border-color: rgba(244, 227, 195, 0.7);
+  color: var(--snes-cream);
+}
+
+.ow-action-chest,
+#roastChestTrigger {
+  background: #531715;
+  border-color: var(--snes-amber);
+  color: #ffffff;
+}
+
+/* ============================================================================
+ * 4. MOBILE (< = 900px) GAME BOY ADVANCE / COLOR DUAL-STAGE LAYOUT
+ *    Top Stage = 58dvh (live canvas + dialogue overlay)
+ *    Bottom Stage = 42dvh (.gba-controller-deck with D-Pad, A/B, START/SELECT, biome pills)
+ *    Zero Document Scroll!
+ * ============================================================================ */
 @media (max-width: 900px) {
+  .overworld-stage,
   .overworld-shell,
   #overworldStage.overworld-shell {
-    position: sticky;
-    top: 0;
-    z-index: 40;
-    max-width: 100%;
-    margin: 0;
-    padding: 8px 10px 10px;
-    border-radius: 0 0 14px 14px;
+    height: 100dvh;
+    max-height: 100dvh;
+    padding: 0;
+    gap: 0;
+    border: 0;
+    border-radius: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .overworld-bezel-top {
+    flex: 0 0 auto;
+    max-height: 42px;
+    padding: 4px 8px;
+    gap: 6px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    border-radius: 0;
     border-inline: 0;
     border-top: 0;
-    border-bottom: 4px solid #000;
-    background: linear-gradient(180deg, #1b2836 0%, #101922 100%);
-    box-shadow:
-      0 4px 0 rgba(56, 199, 231, 0.35),
-      0 10px 24px rgba(0, 0, 0, 0.72),
-      inset 0 2px 0 rgba(255, 255, 255, 0.08);
   }
-  .overworld-shell #overworldCanvasHost {
-    max-height: clamp(148px, 26dvh, 210px);
-    border: 3px solid #070d12;
-    border-radius: 8px;
-    box-shadow: inset 0 0 0 2px rgba(56, 199, 231, 0.25);
+
+  .overworld-bezel-top::-webkit-scrollbar {
+    display: none;
   }
-  /* Keep section headers visible below the sticky Game Boy screen on hash/fast-travel scroll */
-  [data-zone],
-  .zone-section,
-  #about,
-  #timeline,
-  #work,
-  #contact {
-    scroll-margin-top: 320px;
+
+  .ow-char-vitals,
+  .ow-controls-hint {
+    display: none;
+  }
+
+  /* Upper Game Screen fills the 58dvh top half alongside the slim top HUD strip */
+  .overworld-viewport {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: 58dvh;
+    border-radius: 0;
+    border-inline: 4px solid #1e293b;
+    border-top: 2px solid #000;
+    border-bottom: 5px solid #0f172a;
+  }
+
+  /* Lower GBA / GBC Hardware Deck locks strictly to 42dvh without horizontal clipping at 320px+ */
+  .gba-controller-deck {
+    flex: 0 0 42dvh;
+    height: 42dvh;
+    min-height: 42dvh;
+    max-height: 42dvh;
+    overflow: hidden;
+    padding: 6px 10px max(8px, env(safe-area-inset-bottom));
+    border-radius: 0;
+    border-inline: 0;
+    border-bottom: 0;
+    border-top: 3px solid var(--active-accent);
+    background:
+      radial-gradient(circle at 86% 24%, rgba(168, 85, 247, 0.16), transparent 44%),
+      linear-gradient(180deg, #1e1b4b 0%, #0f172a 60%, #090d16 100%);
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto 1fr auto;
+    align-items: center;
+    gap: 6px 8px;
+  }
+
+  .gba-quick-group {
+    grid-column: 1 / -1;
+    grid-row: 1;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    gap: 6px;
+  }
+
+  .gba-quick-group .ow-action-btn {
+    min-block-size: 32px;
+    padding: 4px 8px;
+    font-size: 7.5px;
+  }
+
+  .gba-dpad-grid {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+    grid-template-columns: repeat(3, 38px);
+    grid-template-rows: repeat(3, 34px);
+  }
+
+  .gba-ab-group {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: end;
+    flex-direction: column-reverse;
+    align-items: flex-end;
+    gap: 6px;
+  }
+
+  .gba-ab-btn {
+    min-width: 112px;
+    min-height: 42px;
+    padding: 6px 10px;
+    font-size: 8px;
+    white-space: nowrap;
+  }
+
+  .gba-system-group {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    flex-direction: row;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .gba-sys-btn {
+    min-height: 32px;
+    padding: 5px 10px;
+    font-size: 7.5px;
+  }
+
+  .snes-dialogue-box,
+  #snesDialogueBox {
+    inset-inline: 6px;
+    inset-block-end: 6px;
+    max-height: calc(100% - 12px);
+    padding: 9px 11px;
+  }
+
+  .snes-dialogue-text,
+  #snesDialogueText {
+    font-size: 12.5px;
+    line-height: 1.45;
   }
 }
 
-/* Pixel banner headers */
-.banner {
-  display:inline-block; position:relative; padding:12px 16px; margin:0;
-  font-family:'Press Start 2P'; font-size:14px; color:#fff;
-  background: linear-gradient(180deg, rgba(56,199,231,.22), rgba(28,59,84,.55));
-  border:2px solid rgba(56,199,231,.5);
-  box-shadow: 0 0 0 4px rgba(0,0,0,.7), 0 6px 0 #000;
-}
-.banner::before, .banner::after {
-  content:""; position:absolute; top:50%; width:14px; height:14px; transform:translateY(-50%);
-  background: linear-gradient(180deg, rgba(56,199,231,.22), rgba(28,59,84,.55));
-  border:2px solid rgba(56,199,231,.5);
-  box-shadow: 0 0 0 4px rgba(0,0,0,.7);
-}
-.banner::before{ left:-10px; clip-path: polygon(0 50%,100% 0,100% 100%); }
-.banner::after { right:-10px; clip-path: polygon(100% 50%,0 0,0 100%); }
-
-/* Card panel */
-.panel {
-  background: rgba(28, 59, 84, .12);
-  border: 2px solid rgba(56, 199, 231, .25);
-  padding: 16px;
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, .55) inset;
-  overflow: visible;
-}
-
-/* Misc global helpers */
-section.card { background: transparent; border: none; padding: 0; }
-.pixel-border { outline: none; box-shadow: none; }
-:target { scroll-margin-top: 24px; }
-:where(a:any-link, button, input, [tabindex]):focus-visible { outline: 3px solid var(--cyan); outline-offset: 2px; }
-.title { text-shadow:0 2px 0 #000, 0 0 10px rgba(0,0,0,.35); }
-.subtitle { text-shadow:0 1px 0 #000; }
-.hero::before { background-size:cover; }
-header { transition: background .2s, border-color .2s, transform .2s, padding .2s; }
-header.scrolled { transform: translateY(-2px); }
-
-/* ===== Native Top-Layer Modal (<dialog> Rule 1 + Scroll Containment) ===== */
-dialog.hw-modal {
+/* ============================================================================
+ * 5. NATIVE TOP-LAYER CHARACTER DOSSIER MODAL (<dialog> Rule 1 + Scroll Lock)
+ * ============================================================================ */
+dialog.hw-modal,
+dialog.dossier-modal {
   padding: 0;
   margin: auto;
-  width: clamp(300px, 88vw, 640px);
-  max-width: 92vw;
-  max-height: 85dvh;
-  overflow: auto;
-  background: #0c0f12;
-  color: #ffffff;
-  border: 2px solid rgba(56, 199, 231, 0.55);
-  box-shadow:
-    0 0 0 4px rgba(0, 0, 0, 0.85) inset,
-    0 0 0 6px rgba(56, 199, 231, 0.25) inset,
-    0 12px 0 #000;
-  image-rendering: pixelated;
-}
-dialog:modal {
-  overscroll-behavior: contain;
-}
-dialog::backdrop {
-  /* ::backdrop is not a scroll container by default; overflow: hidden enables
-     overscroll-behavior: contain so scroll gestures over the backdrop do not leak to the page. */
+  width: clamp(310px, 92vw, 960px);
+  max-width: 94vw;
+  max-height: 90dvh;
   overflow: hidden;
-  overscroll-behavior: contain;
-  background: rgba(5, 11, 17, 0.78);
-  backdrop-filter: blur(2px);
+  background: #090d16;
+  color: #f8fafc;
+  border: 3px solid var(--snes-gold);
+  outline: 3px solid #000;
+  border-radius: 6px;
+  box-shadow:
+    inset 0 0 0 3px rgba(23, 37, 84, 0.9),
+    0 18px 48px rgba(0, 0, 0, 0.92);
 }
-.hw-modal-frame {
+
+dialog.hw-modal[open] {
   display: flex;
   flex-direction: column;
 }
-.modal-header {
+
+/* Mandatory top-layer scroll containment per modern-web-guidance */
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+  background: rgba(4, 7, 15, 0.84);
+  backdrop-filter: blur(3px);
+}
+
+.hw-modal-frame,
+.dossier-frame {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-height: 90dvh;
+}
+
+.modal-header,
+.dossier-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 14px;
-  background: linear-gradient(180deg, rgba(56, 199, 231, 0.22), rgba(28, 59, 84, 0.55));
-  border-bottom: 2px solid rgba(56, 199, 231, 0.35);
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #172554 0%, #0f172a 100%);
+  border-bottom: 2px solid rgba(250, 204, 21, 0.45);
 }
+
 .hw-modal-heading {
   display: flex;
   flex-direction: column;
   gap: 4px;
   min-width: 0;
 }
+
 .hw-modal-tag {
   font-family: 'Press Start 2P', monospace;
-  font-size: 9px;
-  color: var(--gold);
+  font-size: 8.5px;
+  color: var(--snes-amber);
   letter-spacing: 0.5px;
 }
+
 .hw-modal-title {
   margin: 0;
   font-family: 'Press Start 2P', monospace;
-  font-size: 12px;
+  font-size: clamp(10px, 1.5vw, 13px);
   line-height: 1.4;
   color: #ffffff;
 }
+
 .hw-modal-close-icon {
   display: grid;
   place-items: center;
-  width: 36px;
-  height: 36px;
+  width: 38px;
+  height: 38px;
   flex-shrink: 0;
-  background: #1b2730;
+  background: #1e293b;
   color: #ffffff;
-  border: 2px solid #000;
-  cursor: pointer;
+  border: 2px solid var(--snes-gold);
+  box-shadow: 0 2px 0 #000;
 }
-.hw-modal-close-icon:hover { filter: brightness(1.15); }
-.modal-body {
-  padding: 16px 14px;
-  font-size: 14px;
-  line-height: 1.55;
-  color: #e2f0fa;
+
+/* Single-Row Scrollable Tablist (no wrapping) */
+.dossier-tablist {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  gap: 6px;
+  padding: 8px 14px 4px;
+  background: #0d1424;
+  border-bottom: 1px solid rgba(250, 204, 21, 0.25);
+  scroll-snap-type: inline proximity;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(250, 204, 21, 0.4) transparent;
 }
-.modal-body p { margin: 0 0 10px; }
-.modal-body p:last-child { margin-bottom: 0; }
-.modal-body .roast-callout {
-  margin-top: 12px;
-  padding: 10px 12px;
-  background: rgba(255, 209, 102, 0.1);
-  border: 1px solid rgba(255, 209, 102, 0.45);
-  border-radius: 6px;
-  color: var(--gold);
-  font-weight: 600;
-}
-.modal-actions {
-  padding: 12px 14px;
-  border-top: 2px solid rgba(56, 199, 231, 0.25);
-  text-align: right;
-}
-.modal-actions .modal-close { min-width: 96px; min-height: 44px; }
-.modal-close {
-  border: 2px solid #000;
-  background: #1b2730;
-  color: #fff;
-  font-family: 'Press Start 2P';
-  font-size: 12px;
+
+.dossier-tab {
+  position: relative;
+  flex: none;
+  scroll-snap-align: start;
+  min-height: 40px;
   padding: 8px 12px;
-  cursor: pointer;
+  background: rgba(23, 37, 84, 0.45);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 4px 4px 0 0;
+  color: #cbd5e1;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  white-space: nowrap;
 }
-.modal-close:hover { filter: brightness(1.12); }
 
-/* ===== Character Card & Loadout ===== */
-.charcard{
-  display:grid;
-  grid-template-columns:200px 1fr;
-  grid-template-rows:auto auto auto;
-  grid-template-areas:"pic name" "pic stats" "pic badges";
-  gap:16px 18px; align-items:start;
+.dossier-tab:hover {
+  color: #ffffff;
+  border-color: var(--snes-star-cyan);
 }
-.charcard > * { min-width:0; }
-#about .panel { overflow:hidden; }
-.cc-nameplate{ grid-area:name; background:none; border:0; box-shadow:none; margin:2px 0 8px; padding-bottom:6px; border-bottom:2px solid rgba(56,199,231,.35); font-family:'Press Start 2P'; font-size:14px; color:#e9f7ff; text-shadow:0 2px 0 #000, 0 0 12px rgba(56,199,231,.35) }
-.cc-stats{ grid-area:stats; display:grid; grid-template-columns:1fr 1fr; gap:10px 22px }
-.cc-row{ display:flex; gap:10px; align-items:flex-start }
-.cc-row .iconify{ font-size:16px; color:#38C7E7; margin-top:3px; filter:drop-shadow(0 0 4px rgba(56,199,231,.6)) }
-.cc-row .label{ font-weight:700 }
-.cc-row .text{ color:#d3e7f3 }
-.charcard .holo{
-  grid-area:pic; width:200px; height:200px; border-radius:16px; overflow:hidden;
-  border:2px solid rgba(56,199,231,.75); box-shadow:0 0 0 4px rgba(0,0,0,.7), 0 0 20px rgba(56,199,231,.5);
-  background:#071019; position:relative; isolation:isolate;
-}
-.charcard .holo img{ width:100%; height:100%; object-fit:cover; image-rendering:pixelated; filter:grayscale(1) contrast(1.35) brightness(.88) sepia(.55) hue-rotate(170deg) saturate(2.2) }
-.charcard .holo::before{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:radial-gradient(130% 120% at 18% 12%, rgba(56,199,231,.55), transparent 55%), linear-gradient(180deg, rgba(56,199,231,.22), rgba(56,199,231,.05));
-  mix-blend-mode:screen;
-}
-.charcard .holo::after{
-  content:""; position:absolute; left:0; top:-110%; width:100%; height:220%; pointer-events:none;
-  background:linear-gradient(180deg, rgba(56,199,231,.18), rgba(56,199,231,0) 45%, rgba(56,199,231,.18));
-  mix-blend-mode:screen;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .charcard .holo::after { animation: scan 6s linear infinite; }
-}
-@keyframes scan { to { transform:translateY(100%); } }
 
-/* Icon bullets */
-.factlist{ display:grid; gap:10px; margin:0; padding:0; list-style:none }
-.factlist li{ display:flex; align-items:center; gap:10px; }
-.i8{ display:inline-flex; align-items:center; justify-content:center; width:18px; height:18px; background:#0b1620; border:2px solid rgba(56,199,231,.5); box-shadow:0 0 0 3px rgba(0,0,0,.6) inset, 0 0 8px rgba(56,199,231,.3) }
-.i8 .iconify{ font-size:14px; line-height:1; color:#38C7E7; filter:drop-shadow(0 0 4px rgba(56,199,231,.6)) }
+/* Selected tab styling driven purely from aria-selected without dimension shifts */
+[role="tab"][aria-selected="true"] {
+  background: rgba(250, 204, 21, 0.14);
+  color: var(--snes-gold);
+  border-color: var(--snes-gold);
+}
 
-/* Loadout */
-.loadout-wrap{ grid-area:badges; min-width:0; margin-top:8px; }
-.loadout-bar{
-  display:flex; gap:10px; overflow-x:auto; padding:6px; scroll-padding-inline: 6px;
-  max-width:100%; border:2px solid rgba(56,199,231,.25);
-  background:rgba(28,59,84,.10); box-shadow:0 0 0 3px rgba(0,0,0,.55) inset;
-  scroll-snap-type:x proximity; -webkit-overflow-scrolling:touch;
-}
-.loadout-chip{
-  flex:0 0 auto; scroll-snap-align:center; display:flex; align-items:center; gap:8px;
-  padding:8px 10px; border:2px solid rgba(56,199,231,.35); background:rgba(28,59,84,.18);
-  box-shadow:0 0 0 3px rgba(0,0,0,.55) inset; font-family:'Press Start 2P'; font-size:10px; color:#fff;
-  position:relative; transition:transform .08s ease, filter .12s ease;
-}
-.loadout-chip .iconify{ font-size:16px; color:#38C7E7; filter:drop-shadow(0 0 4px rgba(56,199,231,.6)) }
-.loadout-chip:hover{ transform:translateY(-1px); filter:drop-shadow(0 0 10px rgba(56,199,231,.35)) }
-.loadout-chip[data-tip]::after{
-  content:attr(data-tip); position:absolute; left:50%; bottom:calc(100% + 6px); transform:translateX(-50%);
-  white-space:nowrap; font-size:10px; font-family:'Press Start 2P'; background:#0c0f12; color:#d3e7f3; padding:6px 8px;
-  border:2px solid rgba(56,199,231,.4); box-shadow:0 0 0 3px rgba(0,0,0,.6) inset; opacity:0; pointer-events:none; transition:opacity .12s ease;
-}
-.loadout-chip:hover::after{ opacity:1 }
-.loadout-chip.rare{ border-color:rgba(255,214,102,.55); box-shadow:0 0 0 3px rgba(0,0,0,.55) inset, 0 0 14px rgba(255,214,102,.25) }
-.loadout-chip.rare::before{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,.18) 40%, transparent 60%);
-  mix-blend-mode:screen; opacity:0;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .loadout-chip.rare::before { animation: shine 3.5s infinite; }
-}
-@keyframes shine{ 0%{opacity:0; transform:translateX(-40%)} 15%{opacity:1} 30%{opacity:0; transform:translateX(40%)} 100%{opacity:0} }
-.loadout-chip.rare .iconify{ color:#FFD166; filter:drop-shadow(0 0 6px rgba(255,214,102,.5)) }
-.easter-msg { margin-top: 8px; font-size: 12px; color: #9fc4d8; }
-.easter-msg .hint { color: var(--gold); font-weight: 700; }
-
-/* Skills meters */
-.skills-panel{
-  padding: 24px 22px;
-  border-radius: 12px;
-  background: linear-gradient(180deg, rgba(20, 36, 50, 0.95) 0%, rgba(10, 20, 30, 0.98) 100%);
-  border: 2px solid rgba(56, 199, 231, 0.3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
-.skills-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 20px }
-@media (max-width:900px){ .skills-grid{ grid-template-columns:1fr } }
-.skill{ display:flex; flex-direction:column; gap:8px }
-.skill-head{ display:flex; align-items:center; gap:10px }
-.skill-head .iconify{ font-size:18px; color:#38C7E7; filter:drop-shadow(0 0 6px rgba(56,199,231,.45)) }
-.skill-name{ font-weight:600 }
-.skill-lvl{ margin-left:auto; font-family:'Press Start 2P'; font-size:10px; color:#bfe9f8; position:relative; font-variant-numeric: tabular-nums; }
-.meter{
-  height:14px; background:#07131a; border:2px solid rgba(0,0,0,.9); box-shadow:0 0 0 3px rgba(0,0,0,.55) inset;
-  position:relative; overflow:hidden; border-radius:2px;
-}
-.meter > span{
-  position:relative; display:block; height:100%; width:0%;
-  background:linear-gradient(90deg,#38C7E7 0%, #8DE5FF 60%, #CFF6FF 100%);
-  box-shadow:0 0 12px rgba(56,199,231,.55); transition:width .6s cubic-bezier(.25,.9,.35,1.0);
-}
-.meter.lit > span::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background-image:repeating-linear-gradient(-45deg, rgba(255,255,255,.28) 0 6px, rgba(255,255,255,0) 6px 12px);
-  background-size:24px 24px; mix-blend-mode:overlay; opacity:.55;
-}
-@media (prefers-reduced-motion: no-preference) {
-  .meter.lit > span::after { animation: meterScan 1.15s linear infinite; }
-}
-@keyframes meterScan{ from{background-position:0 0} to{background-position:24px 0} }
-
-/* === Character Profile Loadout arrows === */
-#about .loadout-belt { position: relative; }
-#about .loadout-nav{
+[role="tab"][aria-selected="true"]::after {
+  content: "";
   position: absolute;
-  inset: 0;
-  z-index: 4;
-  pointer-events: none;
+  inset: auto 0 0;
+  border-block-end: 3px solid var(--snes-gold);
 }
-#about .loadout-nav .nav-btn{
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 36px;
-  height: 36px;
+
+.dossier-scroll-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dossier-panels-stack {
   display: grid;
-  place-items: center;
-  padding: 0;
-  pointer-events: auto;
-  cursor: pointer;
-  z-index: 5;
-  border: 2px solid rgba(56,199,231,.45);
-  background: linear-gradient(180deg, rgba(56,199,231,.20), rgba(28,59,84,.85));
-  box-shadow: 0 0 0 3px rgba(0,0,0,.6) inset, 0 4px 0 #000;
+}
+
+.dossier-panels-stack > [role="tabpanel"] {
+  grid-area: 1 / 1;
+}
+
+.dossier-panel-inner {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Retro Pixelated Gold Portrait Bezel */
+.dossier-hero-banner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  align-items: center;
+  padding: 14px;
+  background: linear-gradient(135deg, rgba(23, 37, 84, 0.55), rgba(9, 13, 22, 0.92));
+  border: 2px solid rgba(250, 204, 21, 0.35);
+  border-radius: 6px;
+}
+
+.dossier-portrait-col {
+  flex: 0 0 auto;
+}
+
+.pixel-gold-bezel {
+  position: relative;
+  display: inline-block;
+  padding: 6px;
+  background: linear-gradient(135deg, #facc15 0%, #ea580c 55%, #f97316 100%);
+  border: 3px solid #000000;
+  box-shadow:
+    inset 0 0 0 3px #172554,
+    0 0 0 2px #facc15,
+    0 6px 0 #000000;
   image-rendering: pixelated;
 }
-#about .loadout-nav .nav-btn.left  { left: 6px; }
-#about .loadout-nav .nav-btn.right { right: 6px; }
-#about .loadout-nav .nav-btn .iconify{
-  font-size: 20px;
-  color: #38C7E7;
-  filter: drop-shadow(0 0 6px rgba(56,199,231,.6));
-  line-height: 1;
-}
-#about .loadout-nav .nav-btn:hover{ filter: brightness(1.05); }
-#about .loadout-nav .nav-btn.disabled{
-  opacity: .35;
-  cursor: default;
-  pointer-events: none;
-}
-#about .loadout-belt .fade { z-index: 3; }
 
-/* Lore checkbox pixel switch */
-.badge-lore-toggle input{
-  appearance:none; width:34px; height:18px; position:relative; cursor:pointer;
-  border:2px solid rgba(56,199,231,.55);
-  background:linear-gradient(180deg, rgba(56,199,231,.25), rgba(28,59,84,.8));
-  box-shadow: inset 0 0 0 3px rgba(0,0,0,.65), 0 3px 0 #000;
-}
-.badge-lore-toggle input::after{
-  content:""; position:absolute; top:2px; left:2px; width:10px; height:10px;
-  background:#0b1620; border:2px solid rgba(56,199,231,.75);
-  box-shadow: inset 0 0 0 2px rgba(0,0,0,.6), 0 0 6px rgba(56,199,231,.45);
-  transform: translateX(0); transition: transform .12s ease;
-}
-.badge-lore-toggle input:checked::after{ transform: translateX(14px); background: var(--gold); border-color: var(--gold); }
-
-/* Robust lore toggle */
-html[data-lore="1"] .badge-card .lore { display:block; }
-html:not([data-lore="1"]) .badge-card .lore { display:none; }
-
-/* Respect WCAG 2.2.2 Pause Motion state across CSS loops as well */
-html[data-motion="paused"] .holo-avatar .scanlines,
-html[data-motion="paused"] .charcard .holo::after,
-html[data-motion="paused"] .loadout-chip.rare::before,
-html[data-motion="paused"] .meter.lit > span::after,
-html[data-motion="paused"] .badge-card .b-xp {
-  animation: none !important;
+.dossier-portrait-img {
+  display: block;
+  width: 112px;
+  height: 112px;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border: 2px solid #000000;
+  background: #090d16;
 }
 
-/* Footer spacing */
-.site-footer {
-  border-top: 1px solid rgba(56, 199, 231, 0.2);
-  margin-top: 18px;
-  padding-bottom: 36px;
+.dossier-lvl-stamp {
+  position: absolute;
+  right: -6px;
+  bottom: -6px;
+  padding: 3px 6px;
+  background: #090d16;
+  border: 2px solid var(--snes-gold);
+  color: var(--snes-gold);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  box-shadow: 0 2px 0 #000;
 }
-.footer-top {
+
+.dossier-identity-col {
+  flex: 1 1 260px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossier-pill-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dossier-pill {
+  padding: 3px 8px;
+  border-radius: 3px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  border: 1px solid;
+}
+
+.dossier-pill.gold { color: var(--snes-gold); border-color: rgba(250, 204, 21, 0.5); background: rgba(250, 204, 21, 0.1); }
+.dossier-pill.cyan { color: var(--snes-star-cyan); border-color: rgba(6, 182, 212, 0.5); background: rgba(6, 182, 212, 0.1); }
+.dossier-pill.grass { color: #86efac; border-color: rgba(21, 128, 61, 0.7); background: rgba(21, 128, 61, 0.25); }
+
+.dossier-char-name {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: clamp(14px, 2vw, 19px);
+  color: #ffffff;
+  text-shadow: 0 2px 0 #000;
+}
+
+.dossier-char-class {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--snes-cream);
+  font-weight: 600;
+}
+
+.dossier-vitals-box {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 10px;
+  background: rgba(9, 13, 22, 0.75);
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 4px;
+}
+
+.dossier-vital-row {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.vital-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--snes-gold);
+}
+
+.vital-meter {
+  height: 9px;
+  background: #0f172a;
+  border: 1px solid #000;
+  overflow: hidden;
+}
+
+.vital-meter > span {
+  display: block;
+  height: 100%;
+}
+
+.vital-meter.hp > span { background: linear-gradient(90deg, #15803d, #22c55e); }
+.vital-meter.mp > span { background: linear-gradient(90deg, #0284c7, #06b6d4); }
+
+.vital-val {
+  font-size: 11px;
+  color: #e2e8f0;
+  font-variant-numeric: tabular-nums;
+}
+
+.dossier-vitals-verbatim {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.dossier-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dossier-section-label,
+.dossier-tab-heading {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--snes-gold);
+  letter-spacing: 0.4px;
+}
+
+.dossier-tab-intro {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: #cbd5e1;
+}
+
+.dossier-loadout-summary {
+  margin: 0;
+  font-size: 12.5px;
+  color: #cbd5e1;
+}
+
+.dossier-equip-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px;
+}
+
+.dossier-equip-card {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 9px 12px;
+  background: rgba(23, 37, 84, 0.38);
+  border: 1px solid rgba(6, 182, 212, 0.3);
+  border-radius: 4px;
+}
+
+.equip-slot {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--snes-star-cyan);
+  text-transform: uppercase;
+}
+
+.equip-name {
+  font-size: 13px;
+  color: #ffffff;
+}
+
+.dossier-attr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.dossier-attr-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.dossier-attr-head {
+  display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #f1f5f9;
 }
-.footer-links { gap: 14px; }
-.footer-links a {
+
+.dossier-attr-pct {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.dossier-attr-bar {
+  height: 10px;
+  background: #0f172a;
+  border: 2px solid #000;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.dossier-attr-bar > span {
+  display: block;
+  height: 100%;
+}
+
+.dossier-abstract-box {
+  padding: 12px 14px;
+  background: rgba(6, 182, 212, 0.08);
+  border-left: 3px solid var(--snes-star-cyan);
+  border-radius: 0 4px 4px 0;
+}
+
+.dossier-abstract-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.55;
+  color: #e2e8f0;
+}
+
+.dossier-chip-belt {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.loadout-chip {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 4px 6px;
+  gap: 6px;
+  padding: 6px 9px;
+  background: rgba(23, 37, 84, 0.55);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  border-radius: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8.5px;
+  color: #f8fafc;
 }
-.footer-links a:hover { color: var(--cyan); text-shadow: 0 0 8px rgba(56, 199, 231, 0.55); }
-.footer-credit { font-size: 13px; color: #9cbccf; }
 
-/* Section overflow protection without breaking sticky ancestors */
-.section, .section .inner, .panel, .banner { max-width: 100%; overflow-x: clip; }
-@supports not (overflow: clip) {
-  .section, .section .inner, .panel, .banner { overflow-x: hidden; }
+.chip-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--snes-star-cyan);
+  display: inline-block;
 }
-.banner::before { left: -6px; }
-.banner::after  { right: -6px; }
-@media (max-width: 420px){
-  .banner::before, .banner::after { display: none; }
+
+.dossier-memorial-box {
+  padding: 12px 14px;
+  background: rgba(244, 227, 195, 0.08);
+  border: 1px solid rgba(244, 227, 195, 0.38);
+  border-radius: 6px;
+}
+
+.dossier-memorial-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.dossier-memorial-head h4 {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-cream);
+}
+
+.dossier-morale-pill {
+  margin-left: auto;
+  padding: 3px 7px;
+  background: rgba(21, 128, 61, 0.4);
+  border: 1px solid #4ade80;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #bbf7d0;
+}
+
+.dossier-memorial-box p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--snes-cream);
+}
+
+/* Hall of Eras Cards */
+.dossier-eras-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.dossier-era-card {
+  padding: 12px 14px;
+  background: rgba(15, 23, 42, 0.85);
+  border: 1px solid rgba(168, 85, 247, 0.35);
+  border-left: 4px solid var(--era-accent, var(--snes-rune-purple));
+  border-radius: 4px;
+}
+
+.era-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8.5px;
+}
+
+.era-badge { color: var(--era-accent, var(--snes-rune-purple)); }
+.era-year { color: var(--snes-gold); font-variant-numeric: tabular-nums; }
+.era-name { margin: 0 0 6px; font-size: 14px; color: #ffffff; }
+.era-lore { margin: 0; font-size: 13px; line-height: 1.5; color: #cbd5e1; }
+
+/* Relic Vault Cards */
+.dossier-relics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.dossier-relic-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  background: rgba(23, 37, 84, 0.4);
+  border: 2px solid rgba(234, 88, 12, 0.5);
+  border-radius: 6px;
+}
+
+.relic-cat {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--snes-amber);
+  text-transform: uppercase;
+}
+
+.relic-name {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  line-height: 1.35;
+  color: #ffffff;
+}
+
+.relic-stats {
+  font-size: 12px;
+  color: var(--snes-gold);
+  font-weight: 600;
+}
+
+.relic-lore {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #cbd5e1;
+  flex: 1;
+}
+
+.dossier-relic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  background: var(--snes-forge-copper);
+  border: 2px solid #000;
+  box-shadow: 0 3px 0 #000;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: #ffffff;
+}
+
+.dossier-status-note {
+  margin: 0;
+  padding: 8px 12px;
+  background: rgba(249, 115, 22, 0.15);
+  border: 1px solid var(--snes-amber);
+  font-size: 12.5px;
+  color: var(--snes-cream);
+}
+
+/* Trophy Armory Inside Dossier */
+.dossier-armory-top {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.badge-lore-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 4px 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-gold);
+}
+
+.badge-lore-toggle input {
+  appearance: none;
+  width: 34px;
+  height: 18px;
+  position: relative;
+  border: 2px solid var(--snes-star-cyan);
+  background: #0f172a;
+}
+
+.badge-lore-toggle input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 10px;
+  height: 10px;
+  background: #64748b;
+  transition: transform 0.12s ease;
+}
+
+.badge-lore-toggle input:checked::after {
+  transform: translateX(14px);
+  background: var(--snes-gold);
+}
+
+.dossier-subfilters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.dossier-filter-btn {
+  min-height: 34px;
+  padding: 6px 10px;
+  background: #132038;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 4px;
+  color: #cbd5e1;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dossier-filter-btn[aria-pressed="true"] {
+  background: rgba(250, 204, 21, 0.16);
+  border-color: var(--snes-gold);
+  color: var(--snes-gold);
+}
+
+.dossier-trophy-inspector {
+  padding: 10px 12px;
+  background: rgba(23, 37, 84, 0.7);
+  border: 2px solid var(--snes-gold);
+  border-radius: 4px;
+}
+
+.dossier-trophy-inspector strong {
+  display: block;
+  margin-bottom: 4px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: var(--snes-gold);
+}
+
+.dossier-trophy-inspector p {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: #f1f5f9;
+}
+
+.dossier-trophy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.pokemon-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: linear-gradient(155deg, #16243d 0%, #090d16 100%);
+  border: 2px solid rgba(6, 182, 212, 0.4);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.pokemon-card.tier-ultimate { border-color: var(--snes-gold); }
+.pokemon-card.tier-prestige { border-color: var(--snes-star-cyan); }
+.pokemon-card.tier-special { border-color: var(--snes-grass); }
+.pokemon-card.locked { opacity: 0.78; }
+
+.poke-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+.poke-type-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background: rgba(6, 182, 212, 0.16);
+  color: var(--snes-star-cyan);
+  border: 1px solid rgba(6, 182, 212, 0.4);
+}
+
+.poke-hp-xp {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8.5px;
+  color: var(--snes-gold);
+}
+
+.poke-art-frame {
+  height: 88px;
+  background: radial-gradient(circle, #1e293b 0%, #090d16 100%);
+  border: 1px solid #000;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.poke-art-frame img {
+  max-height: 74px;
+  max-width: 90%;
+  object-fit: contain;
+}
+
+.poke-body {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.poke-title {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.poke-caption {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #cbd5e1;
+}
+
+.poke-lore-box {
+  display: none;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-left: 2px solid var(--snes-gold);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #e2e8f0;
+}
+
+html[data-lore="1"] .poke-lore-box {
+  display: block;
+}
+
+.lore-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--snes-gold);
+  margin-right: 4px;
+}
+
+.poke-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 6px;
+  border-top: 1px solid rgba(148, 163, 184, 0.2);
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+}
+
+.poke-rarity-stamp.ultimate { color: var(--snes-gold); }
+.poke-rarity-stamp.prestige { color: var(--snes-star-cyan); }
+.poke-rarity-stamp.special { color: #4ade80; }
+.poke-rarity-stamp.locked { color: #94a3b8; }
+
+.poke-footer-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poke-card-id { color: #94a3b8; }
+
+.poke-inspect-btn {
+  padding: 3px 6px;
+  background: rgba(6, 182, 212, 0.16);
+  border: 1px solid var(--snes-star-cyan);
+  color: #e0f2fe;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7.5px;
+}
+
+/* Signal Beacon Tab */
+.dossier-beacon-speaker {
+  margin: 0;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--snes-star-cyan);
+}
+
+.dossier-beacon-quote {
+  margin: 0;
+  padding: 12px 14px;
+  background: rgba(6, 182, 212, 0.08);
+  border-left: 3px solid var(--snes-star-cyan);
+  font-size: 14px;
+  line-height: 1.55;
+  color: #f1f5f9;
+}
+
+.dossier-channels-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 10px;
+}
+
+.dossier-channel-card {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  background: rgba(23, 37, 84, 0.5);
+  border: 2px solid var(--snes-star-cyan);
+  border-radius: 6px;
+}
+
+.dossier-channel-card:hover {
+  border-color: var(--snes-gold);
+}
+
+.channel-type {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: var(--snes-gold);
+}
+
+.channel-label {
+  font-size: 13.5px;
+  color: #ffffff;
+}
+
+.channel-val {
+  font-size: 12px;
+  color: #93c5fd;
+  word-break: break-all;
+}
+
+.modal-actions,
+.dossier-footer {
+  flex: 0 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 16px;
+  background: #0d1424;
+  border-top: 2px solid rgba(250, 204, 21, 0.3);
+}
+
+.dossier-footer-hint {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.modal-close {
+  min-height: 38px;
+  padding: 8px 14px;
+  background: var(--snes-navy-top);
+  border: 2px solid var(--snes-gold);
+  box-shadow: 0 2px 0 #000;
+  color: #ffffff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9.5px;
+}
+
+/* ============================================================================
+ * 6. WCAG 2.2.2 PAUSE MOTION & FORCED-COLORS SUPPORT
+ * ============================================================================ */
+@media (prefers-reduced-motion: no-preference) {
+  .pixel-gold-bezel {
+    animation: goldPulse 4s ease-in-out infinite;
+  }
+}
+
+@keyframes goldPulse {
+  0%, 100% { box-shadow: inset 0 0 0 3px #172554, 0 0 0 2px #facc15, 0 6px 0 #000; }
+  50% { box-shadow: inset 0 0 0 3px #172554, 0 0 0 2px #facc15, 0 0 18px rgba(250, 204, 21, 0.45), 0 6px 0 #000; }
+}
+
+/* Pause persistent decorative CSS animations cleanly when WCAG 2.2.2 #motionToggle is active,
+   while preserving non-motion color/border feedback transitions on buttons and links. */
+html[data-motion="paused"] .pixel-gold-bezel,
+html[data-motion="paused"] .overworld-viewport::after,
+html[data-motion="paused"] [data-animated="true"] {
+  animation: none !important;
+  animation-play-state: paused !important;
+}
+
+@media (forced-colors: active) {
+  .overworld-stage,
+  .overworld-viewport,
+  .snes-dialogue-box,
+  dialog.hw-modal,
+  .ow-tool-btn,
+  .ow-travel-btn,
+  .ow-action-btn,
+  .gba-dpad-btn,
+  .gba-ab-btn,
+  .gba-sys-btn {
+    border-color: ButtonText;
+    color: ButtonText;
+  }
+
+  [role="tab"][aria-selected="true"]::after {
+    border-block-end-color: Highlight;
+  }
 }

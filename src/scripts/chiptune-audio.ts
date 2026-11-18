@@ -1,9 +1,14 @@
 /**
  * Path: src/scripts/chiptune-audio.ts
  * Purpose: Zero-dependency procedural Web Audio API 8-bit chiptune synthesizer
- *          providing RPG footsteps, zone arrival chimes, White Dog bark chime,
- *          treasure chest fanfare, and HUD toggle blips without external audio files.
- * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ *          providing RPG footsteps, SNES dialogue typewriter blips, confirm/cancel
+ *          menu chimes, zone arrival arpeggios, White Dog bark chime, treasure chest
+ *          fanfare, and HUD toggle ticks with 0 KB external audio assets.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Debug Operator Notes:
+ * - Set `window.__RASS_OVERWORLD_DEBUG__ = true` to inspect AudioContext lifecycle,
+ *   gesture unlock transitions, and per-event synth triggers in DevTools console.
  */
 
 type OscillatorWave = 'square' | 'triangle' | 'sawtooth' | 'sine';
@@ -44,6 +49,7 @@ export class ChiptuneAudio {
   private muted = false;
   private gestureUnlocked = false;
   private lastStepAtMs = 0;
+  private lastTypewriterAtMs = 0;
   private gestureBound = false;
   private onUnlockBound: (() => void) | null = null;
 
@@ -52,6 +58,12 @@ export class ChiptuneAudio {
    * sounds like rhythmic 8-bit walking steps rather than a continuous buzz.
    */
   private static readonly STEP_COOLDOWN_MS = 105;
+
+  /**
+   * Minimum cooldown between typewriter speech blips (ms) so rapid character-by-
+   * character dialogue reveals sound like crisp SNES text cadence without buzz.
+   */
+  private static readonly TYPEWRITER_COOLDOWN_MS = 44;
 
   /**
    * Master gain headroom (0..1) chosen to prevent digital clipping when
@@ -150,8 +162,9 @@ export class ChiptuneAudio {
   private ensureContext(): AudioContext | null {
     if (typeof window === 'undefined') return null;
 
-    const userActivated =
-      this.gestureUnlocked || Boolean(navigator.userActivation?.isActive);
+    const hasUserActivation =
+      typeof navigator !== 'undefined' && Boolean(navigator.userActivation?.isActive);
+    const userActivated = this.gestureUnlocked || hasUserActivation;
     if (!userActivated) {
       debugLog('Blocked AudioContext creation prior to user gesture.');
       return null;
@@ -372,6 +385,90 @@ export class ChiptuneAudio {
       durationSec: 0.038,
       peakGain: 0.18,
     });
+  }
+
+  /**
+   * Classic SNES RPG dialogue typewriter blip throttled by TYPEWRITER_COOLDOWN_MS
+   * so rapid character reveals produce crisp speech cadence without harsh clipping.
+   * Optional `pitchOffsetHz` subtly colors voice register per speaker (e.g. RASS vs Boris).
+   */
+  public playTypewriterBlip(pitchOffsetHz = 0): void {
+    if (this.muted || !this.gestureUnlocked) return;
+    const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
+    if (now - this.lastTypewriterAtMs < ChiptuneAudio.TYPEWRITER_COOLDOWN_MS) return;
+    this.lastTypewriterAtMs = now;
+
+    // Clamped 420..980Hz voice band sits comfortably inside mobile speaker mid-range.
+    const baseFreq = Math.max(420, Math.min(980, 620 + pitchOffsetHz));
+    this.scheduleTone({
+      type: 'square',
+      freqStart: baseFreq,
+      freqEnd: baseFreq * 1.06,
+      durationSec: 0.024,
+      peakGain: 0.12,
+      attackSec: 0.002,
+    });
+  }
+
+  /**
+   * Crisp two-note ascending SNES confirm chime (C5 -> G5) used when advancing
+   * dialogue, interacting with world hotspots, or opening the Character Dossier.
+   */
+  public playConfirm(): void {
+    if (this.muted) return;
+    this.unlock();
+
+    this.scheduleTone({
+      type: 'square',
+      freqStart: 523.25,
+      durationSec: 0.052,
+      delaySec: 0,
+      peakGain: 0.22,
+    });
+    this.scheduleTone({
+      type: 'square',
+      freqStart: 783.99,
+      durationSec: 0.095,
+      delaySec: 0.045,
+      peakGain: 0.24,
+    });
+    // Triangle root adds warm SNES cartridge body underneath the confirm fifth.
+    this.scheduleTone({
+      type: 'triangle',
+      freqStart: 261.63,
+      durationSec: 0.12,
+      delaySec: 0.045,
+      peakGain: 0.2,
+    });
+
+    debugLog('Played SNES confirm chime.');
+  }
+
+  /**
+   * Gentle descending two-note cancel/back chime (E5 -> A4) used when closing
+   * dialogue panels, dismissing overlays, or backing out of menus ([ESC / B]).
+   */
+  public playCancel(): void {
+    if (this.muted) return;
+    this.unlock();
+
+    this.scheduleTone({
+      type: 'square',
+      freqStart: 659.25,
+      durationSec: 0.048,
+      delaySec: 0,
+      peakGain: 0.18,
+    });
+    this.scheduleTone({
+      type: 'triangle',
+      freqStart: 440.0,
+      freqEnd: 329.63,
+      durationSec: 0.09,
+      delaySec: 0.042,
+      peakGain: 0.24,
+    });
+
+    debugLog('Played SNES cancel chime.');
   }
 
   /**

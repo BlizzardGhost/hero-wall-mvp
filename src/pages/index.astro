@@ -1,50 +1,24 @@
 ---
 /*
  * Path: src/pages/index.astro
- * Purpose: Root Hero Wall page assembling the Hero arrival, interleaved 16-bit Overworld stage,
- *          the 5 World Zones (Sanctuary Citadel, Hall of Eras, Relic Vault, Trophy Armory, Signal Beacon),
- *          and the grounded Footer.
- * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ * Purpose: Pure full-viewport 16-bit RPG Overworld entry page mounting OverworldStage
+ *          and CharacterDossier inside a fixed zero-scroll game viewport with zero
+ *          vertical document sections.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Legacy vertical sections (Hero, About, Timeline, Relics, BadgeWall, CTA, Footer)
+ *   are intentionally omitted from document flow; all content lives inside the game FSM
+ *   and CharacterDossier terminal.
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
-import Hero from "../components/Hero.astro";
 import OverworldStage from "../components/OverworldStage.astro";
-import About from "../components/About.astro";
-import Skills from "../components/Skills.astro";
-import Timeline from "../components/Timeline.astro";
-import Relics from "../components/Relics.astro";
-import BadgeWall from "../components/BadgeWall.astro";
-import CTA from "../components/CTA.astro";
-import Footer from "../components/Footer.astro";
-
-const EMAIL = "boris.quijano@live.com";
-const WHATSAPP = "+503 7118 0568";
+import CharacterDossier from "../components/CharacterDossier.astro";
 ---
 
-<BaseLayout title="Boris Quijano | LATAM AI Sherpa & 16-Bit Overworld">
-  <main id="main">
-    <Hero />
-
-    <!-- Interleaved 16-Bit RPG Overworld Stage (desktop viewport / mobile sticky Game Boy top screen) -->
+<BaseLayout title="Boris Quijano | 16-Bit RPG Overworld — LATAM AI Sherpa">
+  <main id="main" class="game-viewport-root">
     <OverworldStage />
-
-    <!-- Zone 1: Sanctuary Citadel (#sanctuary, preserving #about alias) -->
-    <About />
-
-    <Skills />
-
-    <!-- Zone 2: Hall of Eras (#eras, preserving #timeline alias) -->
-    <Timeline />
-
-    <!-- Zone 3: Relic Vault (#relics, preserving #work alias) -->
-    <Relics />
-
-    <!-- Zone 4: Trophy Armory (#trophies) -->
-    <BadgeWall />
-
-    <!-- Zone 5: Signal Beacon (#beacon, preserving #contact alias) -->
-    <CTA email={EMAIL} whatsapp={WHATSAPP} href={`mailto:${EMAIL}`} />
+    <CharacterDossier />
   </main>
-
-  <Footer infusionUrl="https://infusio.pro" kidslabUrl="https://kidslab.lat" email={EMAIL} whatsapp={WHATSAPP} />
 </BaseLayout>

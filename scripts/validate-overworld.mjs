@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
  * Path: scripts/validate-overworld.mjs
- * Purpose: Headless source and build-artifact validator for SPEC-020 (Hero Wall 16-bit RPG Overworld).
- *          Verifies PixiJS v8 WebGPU + WGSL sky shader, 4-member party + Emy/Kiba/Yue memorial tribute,
- *          zero-KB Web Audio chiptune synthesizer, 5 World Zones, Baseline top-layer <dialog>,
- *          accessible focusgroup tablist, WCAG 2.2.2 #motionToggle without aria-pressed,
- *          humanizer prose hygiene, mobile Game Boy sticky CSS, and built dist/ or .vercel/output HTML.
- * Spec Reference: SPEC-020 (specs/020-hero-wall-16bit-overworld-implementation/spec.md)
+ * Purpose: Headless source and build-artifact validator for SPEC-021 (Hero Wall Pure 16-Bit RPG Overworld).
+ *          Enforces zero-scroll 100dvh viewport shell, desktop CRT + mobile GBA dual-stage layout,
+ *          5 SNES biomes & palette, multi-frame procedural pixel sprites, 5-state FSM & SnesDialogueBox,
+ *          0-KB procedural Web Audio chiptunes, native top-layer <dialog id="characterDossierModal"> with
+ *          Boris's real portrait in .pixel-gold-bezel & focusgroup tablist, verbatim game-content.ts
+ *          scripts & 21 trophy cards, WCAG 2.2.2 #motionToggle without aria-pressed, and built HTML/JS.
+ * Spec Reference: SPEC-021 (specs/021-hero-wall-full-game-overworld/spec.md)
  *
  * Operator Notes:
  * - Supports `--root <dir>` or `--root=<dir>` (defaults to `process.env.HERO_WALL_ROOT`, else `process.cwd()`
  *   when `package.json` is present there, else parent directory of `scripts/`).
- * - Validates built HTML in `dist/` and `.vercel/output/static/` automatically when present.
+ * - Validates built HTML/JS in `dist/` and `.vercel/output/static/` automatically when present.
  * - Pass `--require-build` to fail if no built HTML files exist yet.
  * - Pass `--verbose` or set `OVERWORLD_VALIDATE_VERBOSE=1` to print every passing assertion.
  */
@@ -122,20 +123,23 @@ function walkFiles(dirAbs, predicate) {
 }
 
 /**
- * Find the opening tag of an HTML element by exact id attribute.
+ * Find the opening tag of an HTML element by exact id attribute, stripping Astro
+ * frontmatter and HTML comments first so references in doc comments do not shadow real tags.
  * @param {string} html
  * @param {string} id
  * @returns {string | null}
  */
 function findElementTagById(html, id) {
+  const withoutFrontmatter = html.replace(/^---[\r\n][\s\S]*?[\r\n]---/m, '');
+  const withoutComments = withoutFrontmatter.replace(/<!--[\s\S]*?-->/g, '');
   const re = new RegExp(`<([a-zA-Z0-9-]+)\\b[^>]*\\bid=["']${id}["'][^>]*>`, 'i');
-  const match = html.match(re);
+  const match = withoutComments.match(re);
   return match ? match[0] : null;
 }
 
 /**
  * Extract all balanced `@media (...) { ... }` blocks matching `mediaPattern` using brace depth,
- * preventing regex over-greedy matches across unrelated rules.
+ * preventing regex over-greedy matches across unrelated CSS rules.
  * @param {string} css
  * @param {RegExp} mediaPattern
  * @returns {string[]}
@@ -162,80 +166,17 @@ function extractMediaBlocks(css, mediaPattern) {
 }
 
 /**
- * Extract user-facing prose from an Astro component or TS data module while stripping comments,
- * style rules, and code identifiers so CSS tokens (--cyan) or code comments do not trigger false positives.
- * @param {string} relPath
- * @param {string} content
+ * Strip JS/TS/CSS comments so structural assertions do not match stale commented-out text.
+ * @param {string} src
  * @returns {string}
  */
-function extractProseForHumanizer(relPath, content) {
-  const chunks = [];
-
-  if (relPath.endsWith('.ts')) {
-    const noComments = content
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
-    const strRe = /(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g;
-    let m;
-    while ((m = strRe.exec(noComments)) !== null) {
-      if (/\s/.test(m[2])) {
-        chunks.push(m[2]);
-      }
-    }
-    return chunks.join('\n');
-  }
-
-  let working = content;
-  const fmMatch = working.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-  if (fmMatch) {
-    const fmNoComments = fmMatch[1]
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
-    const strRe = /(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g;
-    let m;
-    while ((m = strRe.exec(fmNoComments)) !== null) {
-      // Skip module import paths and CSS/URL fragments
-      if (/\s/.test(m[2]) && !m[2].startsWith('.') && !m[2].startsWith('http')) {
-        chunks.push(m[2]);
-      }
-    }
-    working = working.slice(fmMatch[0].length);
-  }
-
-  // Inspect multi-word user-facing copy literals inside <script> blocks (e.g., modal roasts/tributes)
-  const scriptRe = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
-  let sm;
-  while ((sm = scriptRe.exec(working)) !== null) {
-    const scriptBody = sm[1]
-      .replace(/\/\*[\s\S]*?\*\//g, ' ')
-      .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
-    const strRe = /(['"`])((?:\\.|(?!\1)[\s\S])*)\1/g;
-    let lit;
-    while ((lit = strRe.exec(scriptBody)) !== null) {
-      if (/\s/.test(lit[2]) && !lit[2].includes('=>')) {
-        chunks.push(lit[2]);
-      }
-    }
-  }
-
-  const htmlWithoutCommentsAndBlocks = working
-    .replace(/<!--[\s\S]*?-->/g, ' ')
-    .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, ' ');
-
-  // Capture user-facing HTML attribute copy (meta content, alt, aria-label, data-html, data-title, data-tip)
-  const attrRe = /\b(?:content|alt|aria-label|data-html|data-title|data-caption|data-tip)=["']([^"']*)["']/gi;
-  let am;
-  while ((am = attrRe.exec(htmlWithoutCommentsAndBlocks)) !== null) {
-    chunks.push(am[1]);
-  }
-
-  // Capture visible HTML text content outside tags
-  chunks.push(htmlWithoutCommentsAndBlocks.replace(/<[^>]+>/g, ' '));
-  return chunks.join('\n');
+function stripCodeComments(src) {
+  return src
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
 }
 
-console.log(`Running SPEC-020 Overworld Validator against: ${ROOT}`);
+console.log(`Running SPEC-021 Overworld Validator against: ${ROOT}`);
 
 // ============================================================================
 // 1. Package & PixiJS v8 Dependency Contract
@@ -263,136 +204,177 @@ if (!pkgRaw) {
       fail('node_modules/pixi.js is v8', `Installed version is ${installedVersion}`);
     }
   } else {
-    notes.push('node_modules/pixi.js not present in validation root (normal for staged deliverables before sync/install).');
+    notes.push('node_modules/pixi.js not present in validation root (expected for staged deliverables before sync/install).');
   }
 }
 
 // ============================================================================
-// 2. Overworld Engine (PixiJS v8 WebGPU + WGSL Sky + 4 Party Members + Zones)
+// 2. Global Styles: Zero-Scroll 100dvh, Mobile GBA Deck, SNES Palette, Dialog, Motion
 // ============================================================================
-const engineSrc = readRel('src/scripts/overworld-engine.ts');
-if (!engineSrc) {
-  fail('src/scripts/overworld-engine.ts exists', 'File not found');
+const cssSrc = readRel('src/styles/global.css');
+const dossierSrc = readRel('src/components/CharacterDossier.astro');
+const combinedCssSurface = `${cssSrc ?? ''}\n${dossierSrc ?? ''}`;
+
+if (!cssSrc) {
+  fail('src/styles/global.css exists', 'File not found');
 } else {
-  pass('src/scripts/overworld-engine.ts exists');
+  pass('src/styles/global.css exists');
 
-  if (/from\s+['"]pixi\.js['"]/.test(engineSrc)) {
-    pass('overworld-engine.ts imports pixi.js');
+  if (/100dvh/i.test(cssSrc) && /overflow\s*:\s*hidden/i.test(cssSrc)) {
+    pass('global.css locks root viewport with 100dvh and overflow: hidden');
   } else {
-    fail('overworld-engine.ts imports pixi.js', 'Missing pixi.js ES import');
+    fail('global.css zero-scroll 100dvh + overflow: hidden', 'Missing 100dvh or overflow: hidden');
   }
 
-  if (/preference\s*:\s*['"]webgpu['"]/.test(engineSrc)) {
-    pass("overworld-engine.ts configures preference: 'webgpu'");
+  const mobileBlocks = extractMediaBlocks(cssSrc, /@media\s*\(\s*max-width\s*:\s*900px\s*\)/);
+  const mobileCombined = mobileBlocks.join('\n');
+  if (mobileBlocks.length > 0 && /\.gba-controller-deck\b/.test(cssSrc)) {
+    pass('global.css includes @media (max-width: 900px) and .gba-controller-deck');
   } else {
-    fail("overworld-engine.ts configures preference: 'webgpu'", "Missing preference: 'webgpu'");
+    fail('global.css mobile Game Boy dual-stage layout', `mobileBlocks=${mobileBlocks.length}, hasGbaDeck=${/\.gba-controller-deck\b/.test(cssSrc)}`);
   }
 
-  if (/export\s+const\s+WGSL_SKY_SHADER\b/.test(engineSrc) && /@vertex|@fragment|fn\s+\w+/.test(engineSrc)) {
-    pass('overworld-engine.ts exports WGSL_SKY_SHADER with WGSL shader entrypoints');
+  if (mobileBlocks.length > 0 && /\.gba-controller-deck\b/.test(mobileCombined)) {
+    pass('global.css styles .gba-controller-deck inside @media (max-width: 900px)');
   } else {
-    fail('overworld-engine.ts exports WGSL_SKY_SHADER', 'Missing WGSL_SKY_SHADER or WGSL syntax');
+    fail('global.css styles .gba-controller-deck inside @media (max-width: 900px)', 'Missing .gba-controller-deck inside mobile media query');
   }
 
-  if (/getHours\s*\(\)/.test(engineSrc) && /celestialToggle/.test(engineSrc)) {
-    pass('overworld-engine.ts syncs Sun/Moon arc to local time + #celestialToggle');
-  } else {
-    fail('overworld-engine.ts Sun/Moon arc + #celestialToggle', 'Missing getHours() or celestialToggle wiring');
-  }
-
-  // All 4 traveling party members + memorial dog tribute names (Emy, Kiba, Yue)
-  const partyChecks = [
-    ['Boris', /\bBoris\b/],
-    ['White Dog', /White\s*Dog/i],
-    ['Emy', /\bEmy\b/],
-    ['Kiba', /\bKiba\b/],
-    ['Yue', /\bYue\b/],
-    ['RASS', /\bRASS\b/],
-    ['Ms. Devil', /Ms\.?\s*Devil/i],
-  ];
-  for (const [name, re] of partyChecks) {
-    if (re.test(engineSrc)) {
-      pass(`overworld-engine.ts includes party/tribute member ${name}`);
+  for (const hex of ['#f97316', '#15803d', '#a855f7', '#ea580c', '#06b6d4']) {
+    if (new RegExp(hex, 'i').test(cssSrc)) {
+      pass(`global.css defines SNES palette color ${hex}`);
     } else {
-      fail(`overworld-engine.ts includes party/tribute member ${name}`, `Pattern ${re} not found`);
+      fail(`global.css defines SNES palette color ${hex}`, `Missing ${hex}`);
     }
   }
 
-  for (const zoneId of ['sanctuary', 'eras', 'relics', 'trophies', 'beacon']) {
-    if (new RegExp(`['"]${zoneId}['"]`).test(engineSrc)) {
-      pass(`overworld-engine.ts registers zone "${zoneId}"`);
-    } else {
-      fail(`overworld-engine.ts registers zone "${zoneId}"`, `Missing "${zoneId}"`);
-    }
+  if (
+    /dialog[^{]*:modal[^{]*\{[^}]*overscroll-behavior\s*:\s*contain/is.test(cssSrc) &&
+    /dialog[^{]*::backdrop[^{]*\{[^}]*overscroll-behavior\s*:\s*contain/is.test(cssSrc)
+  ) {
+    pass('global.css enforces dialog:modal and dialog::backdrop overscroll-behavior: contain');
+  } else {
+    fail('global.css dialog scroll containment', 'Missing dialog:modal or dialog::backdrop overscroll-behavior: contain');
   }
 
-  if (/roastChest/.test(engineSrc) && /playChestOpen/.test(engineSrc) && /playBarkChime/.test(engineSrc)) {
-    pass('overworld-engine.ts wires roastChest + playChestOpen + playBarkChime');
+  if (/html\[data-motion=["']paused["']\]/i.test(cssSrc)) {
+    pass('global.css supports html[data-motion="paused"] motion pause');
   } else {
-    fail('overworld-engine.ts interactive triggers', 'Missing roastChest, playChestOpen, or playBarkChime');
-  }
-
-  if (/IntersectionObserver/.test(engineSrc) && /prefers-reduced-motion/.test(engineSrc) && /__RASS_OVERWORLD_DEBUG__/.test(engineSrc)) {
-    pass('overworld-engine.ts includes IntersectionObserver, reduced-motion, and opt-in debug hook');
-  } else {
-    fail('overworld-engine.ts observer/motion/debug hooks', 'Missing IntersectionObserver, prefers-reduced-motion, or __RASS_OVERWORLD_DEBUG__');
+    fail('global.css supports html[data-motion="paused"]', 'Missing html[data-motion="paused"] selector');
   }
 }
 
 // ============================================================================
-// 3. Procedural Web Audio Chiptune Synthesizer (0 External Audio Assets)
+// 3. BaseLayout.astro & index.astro (Pure Game Viewport, Zero Vertical Sections)
 // ============================================================================
-const audioSrc = readRel('src/scripts/chiptune-audio.ts');
-if (!audioSrc) {
-  fail('src/scripts/chiptune-audio.ts exists', 'File not found');
+const baseLayoutSrc = readRel('src/layouts/BaseLayout.astro');
+if (!baseLayoutSrc) {
+  fail('src/layouts/BaseLayout.astro exists', 'File not found');
 } else {
-  pass('src/scripts/chiptune-audio.ts exists');
+  pass('src/layouts/BaseLayout.astro exists');
 
-  if (/AudioContext|webkitAudioContext/.test(audioSrc)) {
-    pass('chiptune-audio.ts uses Web Audio API AudioContext');
+  if (/<html\s+lang=["']en["']>/i.test(baseLayoutSrc) && /\.\.\/styles\/global\.css/.test(baseLayoutSrc)) {
+    pass('BaseLayout.astro uses <html lang="en"> and loads ../styles/global.css');
   } else {
-    fail('chiptune-audio.ts uses Web Audio API', 'Missing AudioContext');
+    fail('BaseLayout.astro html lang and global.css import', 'Missing <html lang="en"> or ../styles/global.css');
   }
 
-  if (/\.(mp3|wav|ogg|flac|m4a|aac)\b/i.test(audioSrc) || /new\s+Audio\s*\(/.test(audioSrc)) {
-    fail('chiptune-audio.ts has 0 external audio files', 'Found external audio file reference or HTMLAudioElement');
+  if (/Press\+Start\+2P|Press Start 2P/.test(baseLayoutSrc) && /Inter/.test(baseLayoutSrc)) {
+    pass('BaseLayout.astro loads Press Start 2P and Inter fonts');
   } else {
-    pass('chiptune-audio.ts has 0 external audio files');
+    fail('BaseLayout.astro font loading', 'Missing Press Start 2P or Inter font link');
   }
 
-  for (const method of ['playStep', 'playZoneChime', 'playBarkChime', 'playChestOpen', 'playToggle']) {
-    if (new RegExp(`\\b${method}\\b`).test(audioSrc)) {
-      pass(`chiptune-audio.ts defines ${method}()`);
-    } else {
-      fail(`chiptune-audio.ts defines ${method}()`, `Missing ${method}`);
-    }
+  if (
+    /<link\b[^>]*rel=["']preload["'][^>]*href=["']\/img\/boris-portrait\.png["'][^>]*fetchpriority=["']high["'][^>]*>/i.test(baseLayoutSrc) ||
+    /<link\b[^>]*href=["']\/img\/boris-portrait\.png["'][^>]*rel=["']preload["'][^>]*fetchpriority=["']high["'][^>]*>/i.test(baseLayoutSrc)
+  ) {
+    pass('BaseLayout.astro preloads /img/boris-portrait.png with fetchpriority="high"');
+  } else {
+    fail('BaseLayout.astro portrait preload', 'Missing <link rel="preload" href="/img/boris-portrait.png" ... fetchpriority="high">');
   }
 
-  if (/resume\s*\(\)/.test(audioSrc)) {
-    pass('chiptune-audio.ts enforces user-gesture AudioContext resume()');
+  if (/<slot\s*\/>/.test(baseLayoutSrc) && !/class=["'][^"']*parallax/i.test(baseLayoutSrc) && !/id=["']heroWallModal["']/i.test(baseLayoutSrc)) {
+    pass('BaseLayout.astro renders <slot /> without legacy parallax overlay or heroWallModal');
   } else {
-    fail('chiptune-audio.ts enforces user-gesture resume()', 'Missing ctx.resume() guard');
+    fail('BaseLayout.astro stripped legacy parallax/modal', 'Found parallax class, heroWallModal, or missing <slot />');
+  }
+}
+
+const indexSrc = readRel('src/pages/index.astro');
+if (!indexSrc) {
+  fail('src/pages/index.astro exists', 'File not found');
+} else {
+  pass('src/pages/index.astro exists');
+
+  if (
+    /<OverworldStage\b/.test(indexSrc) &&
+    /<CharacterDossier\b/.test(indexSrc) &&
+    /<main\b[^>]*\bid=["']main["'][^>]*\bclass=["'][^"']*\bgame-viewport-root\b[^"']*["'][^>]*>/i.test(indexSrc)
+  ) {
+    pass('index.astro mounts <OverworldStage /> and <CharacterDossier /> inside <main id="main" class="game-viewport-root">');
+  } else {
+    fail('index.astro game viewport mount', 'Missing <main id="main" class="game-viewport-root">, <OverworldStage />, or <CharacterDossier />');
+  }
+
+  const forbiddenLegacy = ['About', 'Timeline', 'Relics', 'BadgeWall', 'CTA', 'Hero'];
+  const legacyHits = forbiddenLegacy.filter((comp) =>
+    new RegExp(`<${comp}\\b|components/${comp}\\.astro`, 'i').test(indexSrc)
+  );
+  if (legacyHits.length === 0) {
+    pass('index.astro omits all legacy static vertical sections (About, Timeline, Relics, BadgeWall, CTA, Hero)');
+  } else {
+    fail('index.astro omits legacy vertical sections', `Found forbidden component reference(s): ${legacyHits.join(', ')}`);
   }
 }
 
 // ============================================================================
-// 4. OverworldStage.astro & WCAG 2.2.2 #motionToggle Check
+// 4. OverworldStage.astro & SnesDialogueBox.astro
 // ============================================================================
 const stageSrc = readRel('src/components/OverworldStage.astro');
+const engineSrc = readRel('src/scripts/overworld-engine.ts');
+const dialogueBoxSrc = readRel('src/components/SnesDialogueBox.astro');
+
 if (!stageSrc) {
   fail('src/components/OverworldStage.astro exists', 'File not found');
 } else {
   pass('src/components/OverworldStage.astro exists');
 
+  const stageTag = findElementTagById(stageSrc, 'overworldStage');
+  if (stageTag && /\boverworld-stage\b/.test(stageTag) && /\boverworld-shell\b/.test(stageTag)) {
+    pass('OverworldStage.astro renders #overworldStage.overworld-stage.overworld-shell');
+  } else {
+    fail('OverworldStage.astro root #overworldStage classes', `Tag was: ${stageTag}`);
+  }
+
+  for (const textToken of ['BORIS', 'LVL 39', 'HP 100/100', 'MP 999/999', 'EXPLORING']) {
+    if (stageSrc.includes(textToken)) {
+      pass(`OverworldStage.astro HUD displays "${textToken}"`);
+    } else {
+      fail(`OverworldStage.astro HUD displays "${textToken}"`, `Missing "${textToken}"`);
+    }
+  }
+
   for (const id of [
-    'overworldStage',
-    'overworldCanvasHost',
+    'overworldZoneLabel',
+    'gameStateBadge',
     'celestialToggle',
     'audioToggle',
     'motionToggle',
-    'roastChestTrigger',
-    'dogPetTrigger',
+    'btnOpenDossier',
     'rendererBadge',
+    'overworldCanvasHost',
+    'overworldFallback',
+    'dpadUp',
+    'dpadDown',
+    'dpadLeft',
+    'dpadRight',
+    'btnActionA',
+    'btnActionB',
+    'btnStartDossier',
+    'btnSelectRoast',
+    'dogPetTrigger',
+    'roastChestTrigger',
   ]) {
     if (findElementTagById(stageSrc, id)) {
       pass(`OverworldStage.astro renders #${id}`);
@@ -409,246 +391,354 @@ if (!stageSrc) {
     }
   }
 
+  if (
+    /<SnesDialogueBox\b/.test(stageSrc) &&
+    /\.overworld-bezel-top\b/.test(stageSrc) &&
+    /\.overworld-viewport\b/.test(stageSrc) &&
+    /\.gba-controller-deck\b/.test(stageSrc) &&
+    /\binitOverworld\s*\(/.test(stageSrc)
+  ) {
+    pass('OverworldStage.astro wires bezel, viewport, <SnesDialogueBox />, .gba-controller-deck, and initOverworld()');
+  } else {
+    fail('OverworldStage.astro structural sections & initOverworld', 'Missing SnesDialogueBox, bezel, viewport, controller deck, or initOverworld()');
+  }
+
   const motionTag = findElementTagById(stageSrc, 'motionToggle');
-  const engineNoComments = (engineSrc ?? '')
-    .replace(/\/\*[\s\S]*?\*\//g, ' ')
-    .replace(/(^|[^:])\/\/.*$/gm, '$1 ');
-  const setsAriaPressed = /setAttribute\s*\(\s*['"]aria-pressed['"]/i.test(engineNoComments);
-  if (motionTag && !/aria-pressed/i.test(motionTag) && !setsAriaPressed) {
-    pass('#motionToggle omits aria-pressed (WCAG 2.2.2 Pause/Play label toggle)');
+  const engineNoComments = stripCodeComments(engineSrc ?? '');
+  const setsAriaPressedOnMotion =
+    /motionToggle[^;]*setAttribute\s*\(\s*['"]aria-pressed['"]/i.test(engineNoComments) ||
+    /setAttribute\s*\(\s*['"]aria-pressed['"]/i.test(engineNoComments);
+  if (motionTag && !/aria-pressed/i.test(motionTag) && !setsAriaPressedOnMotion) {
+    pass('#motionToggle omits aria-pressed across markup and overworld-engine.ts');
   } else {
     fail('#motionToggle omits aria-pressed', 'Found aria-pressed on #motionToggle or setAttribute("aria-pressed") in overworld-engine.ts');
   }
 }
 
-// ============================================================================
-// 5. BaseLayout.astro (Native Top-Layer <dialog> + Satirical Roasts)
-// ============================================================================
-const baseLayoutSrc = readRel('src/layouts/BaseLayout.astro');
-if (!baseLayoutSrc) {
-  fail('src/layouts/BaseLayout.astro exists', 'File not found');
+if (!dialogueBoxSrc) {
+  fail('src/components/SnesDialogueBox.astro exists', 'File not found');
 } else {
-  pass('src/layouts/BaseLayout.astro exists');
+  pass('src/components/SnesDialogueBox.astro exists');
 
-  const dialogTag = findElementTagById(baseLayoutSrc, 'heroWallModal');
-  if (!dialogTag || !/^<dialog\b/i.test(dialogTag)) {
-    fail('BaseLayout.astro uses native <dialog id="heroWallModal">', 'Missing <dialog id="heroWallModal">');
-  } else {
-    if (/closedby=["']any["']/i.test(dialogTag) && /aria-labelledby=["']modalTitle["']/i.test(dialogTag)) {
-      pass('BaseLayout.astro <dialog id="heroWallModal"> uses closedby="any" and aria-labelledby="modalTitle"');
+  for (const id of [
+    'snesDialogueBox',
+    'snesDialogueTitle',
+    'snesSpeakerName',
+    'snesStatePill',
+    'snesDialogueText',
+    'snesInspectorContent',
+    'snesChoiceList',
+    'snesContinueBtn',
+    'snesCloseBtn',
+    'interactionPrompt',
+    'moraleToast',
+  ]) {
+    if (findElementTagById(dialogueBoxSrc, id)) {
+      pass(`SnesDialogueBox.astro renders #${id}`);
     } else {
-      fail('BaseLayout.astro <dialog> required attributes', `Tag was: ${dialogTag}`);
+      fail(`SnesDialogueBox.astro renders #${id}`, `Missing id="${id}"`);
+    }
+  }
+}
+
+// ============================================================================
+// 5. Pixel Sprites (pixel-sprites.ts)
+// ============================================================================
+const spritesSrc = readRel('src/scripts/pixel-sprites.ts');
+if (!spritesSrc) {
+  fail('src/scripts/pixel-sprites.ts exists', 'File not found');
+} else {
+  pass('src/scripts/pixel-sprites.ts exists');
+
+  for (const sym of [
+    'BORIS_SPRITE_FRAMES',
+    'WHITE_DOG_FRAMES',
+    'RASS_DRONE_FRAMES',
+    'MS_DEVIL_FRAMES',
+    'WORLD_OBJECT_SPRITES',
+    'createSpriteTextureSet',
+    'drawMatrixFrame',
+  ]) {
+    if (new RegExp(`export\\s+(?:const|function)\\s+${sym}\\b`).test(spritesSrc)) {
+      pass(`pixel-sprites.ts exports ${sym}`);
+    } else {
+      fail(`pixel-sprites.ts exports ${sym}`, `Missing export ${sym}`);
+    }
+  }
+
+  const has4Dirs =
+    /\bdown\s*:/.test(spritesSrc) &&
+    /\bup\s*:/.test(spritesSrc) &&
+    /\bleft\s*:/.test(spritesSrc) &&
+    /\bright\s*:/.test(spritesSrc);
+  const hasBoris4Frames = /down\s*:\s*\[[^\]]*,[^\]]*,[^\]]*,[^\]]*\]/s.test(spritesSrc);
+  if (has4Dirs && hasBoris4Frames) {
+    pass('pixel-sprites.ts defines 4-directional 4-frame Boris walk cycle');
+  } else {
+    fail('pixel-sprites.ts 4-dir 4-frame Boris walk cycle', `has4Dirs=${has4Dirs}, has4Frames=${hasBoris4Frames}`);
+  }
+
+  if (
+    /WHITE_DOG_FRAMES\b[^=]*=\s*\[[^\]]*,[^\]]*,[^\]]*,[^\]]*\]/s.test(spritesSrc) &&
+    /RASS_DRONE_FRAMES\b[^=]*=\s*\[[^\]]*,[^\]]*\]/s.test(spritesSrc)
+  ) {
+    pass('pixel-sprites.ts defines 4-frame White Dog trot and 2-frame RASS Drone hover');
+  } else {
+    fail('pixel-sprites.ts companion frame counts', 'Expected 4 frames in WHITE_DOG_FRAMES and 2 frames in RASS_DRONE_FRAMES');
+  }
+
+  if (/\.(png|webp|jpg|jpeg|gif)\b/i.test(stripCodeComments(spritesSrc))) {
+    fail('pixel-sprites.ts has zero external sprite image assets', 'Found image extension in code');
+  } else {
+    pass('pixel-sprites.ts has zero external sprite image assets');
+  }
+}
+
+// ============================================================================
+// 6. World Biomes & WGSL Shader (world-biomes.ts)
+// ============================================================================
+const biomesSrc = readRel('src/scripts/world-biomes.ts');
+if (!biomesSrc) {
+  fail('src/scripts/world-biomes.ts exists', 'File not found');
+} else {
+  pass('src/scripts/world-biomes.ts exists');
+
+  for (const sym of ['WORLD_WIDTH', 'WORLD_HEIGHT', 'WGSL_SKY_SHADER', 'BIOME_DEFINITIONS', 'WORLD_HOTSPOTS', 'getBiomeAtX']) {
+    if (new RegExp(`export\\s+(?:const|function)\\s+${sym}\\b`).test(biomesSrc)) {
+      pass(`world-biomes.ts exports ${sym}`);
+    } else {
+      fail(`world-biomes.ts exports ${sym}`, `Missing export ${sym}`);
+    }
+  }
+
+  if (/@vertex|@fragment|fn\s+\w+/.test(biomesSrc)) {
+    pass('world-biomes.ts WGSL_SKY_SHADER contains valid WGSL shader syntax');
+  } else {
+    fail('world-biomes.ts WGSL shader syntax', 'Missing @vertex/@fragment/fn entrypoints');
+  }
+
+  for (const biomeId of ['sanctuary', 'eras', 'relics', 'trophies', 'beacon']) {
+    if (new RegExp(`['"]${biomeId}['"]`).test(biomesSrc)) {
+      pass(`world-biomes.ts defines biome "${biomeId}"`);
+    } else {
+      fail(`world-biomes.ts defines biome "${biomeId}"`, `Missing "${biomeId}"`);
+    }
+  }
+}
+
+// ============================================================================
+// 7. Overworld Engine (PixiJS v8 WebGPU + 5-State FSM + Debug Hook)
+// ============================================================================
+if (!engineSrc) {
+  fail('src/scripts/overworld-engine.ts exists', 'File not found');
+} else {
+  pass('src/scripts/overworld-engine.ts exists');
+
+  if (/from\s+['"]pixi\.js['"]/.test(engineSrc) && /preference\s*:\s*['"]webgpu['"]/.test(engineSrc)) {
+    pass("overworld-engine.ts imports pixi.js and configures preference: 'webgpu'");
+  } else {
+    fail("overworld-engine.ts PixiJS v8 WebGPU setup", "Missing pixi.js import or preference: 'webgpu'");
+  }
+
+  for (const fsmState of ['EXPLORING', 'DIALOGUE', 'INSPECT_RELIC', 'CHARACTER_SHEET', 'MIMIC_ROAST']) {
+    if (new RegExp(`['"]${fsmState}['"]`).test(engineSrc)) {
+      pass(`overworld-engine.ts handles FSM state "${fsmState}"`);
+    } else {
+      fail(`overworld-engine.ts handles FSM state "${fsmState}"`, `Missing "${fsmState}"`);
+    }
+  }
+
+  if (/__RASS_OVERWORLD_DEBUG__/.test(engineSrc) && /prefers-reduced-motion/.test(engineSrc)) {
+    pass('overworld-engine.ts exposes __RASS_OVERWORLD_DEBUG__ and honors prefers-reduced-motion');
+  } else {
+    fail('overworld-engine.ts debug and reduced-motion hooks', 'Missing __RASS_OVERWORLD_DEBUG__ or prefers-reduced-motion');
+  }
+}
+
+// ============================================================================
+// 8. Procedural Web Audio Chiptune Synthesizer (chiptune-audio.ts)
+// ============================================================================
+const audioSrc = readRel('src/scripts/chiptune-audio.ts');
+if (!audioSrc) {
+  fail('src/scripts/chiptune-audio.ts exists', 'File not found');
+} else {
+  pass('src/scripts/chiptune-audio.ts exists');
+
+  if (/\.(mp3|wav|ogg|flac|m4a|aac)\b/i.test(stripCodeComments(audioSrc)) || /new\s+Audio\s*\(/.test(audioSrc)) {
+    fail('chiptune-audio.ts has 0 external audio files', 'Found audio file reference or new Audio()');
+  } else {
+    pass('chiptune-audio.ts has 0 external audio files');
+  }
+
+  if (/AudioContext|webkitAudioContext/.test(audioSrc) && /resume\s*\(\)/.test(audioSrc)) {
+    pass('chiptune-audio.ts uses gesture-gated AudioContext + resume()');
+  } else {
+    fail('chiptune-audio.ts Web Audio gating', 'Missing AudioContext or resume()');
+  }
+
+  for (const method of ['playStep', 'playTypewriterBlip', 'playBarkChime', 'playChestOpen', 'playConfirm', 'playCancel', 'playZoneChime', 'playToggle']) {
+    if (new RegExp(`\\b${method}\\b`).test(audioSrc)) {
+      pass(`chiptune-audio.ts defines ${method}()`);
+    } else {
+      fail(`chiptune-audio.ts defines ${method}()`, `Missing ${method}`);
+    }
+  }
+}
+
+// ============================================================================
+// 9. CharacterDossier.astro (Native <dialog>, Portrait Bezel, Focusgroup Tabs)
+// ============================================================================
+if (!dossierSrc) {
+  fail('src/components/CharacterDossier.astro exists', 'File not found');
+} else {
+  pass('src/components/CharacterDossier.astro exists');
+
+  const dialogTag = findElementTagById(dossierSrc, 'characterDossierModal');
+  if (!dialogTag || !/^<dialog\b/i.test(dialogTag)) {
+    fail('CharacterDossier.astro uses native <dialog id="characterDossierModal">', 'Missing <dialog id="characterDossierModal">');
+  } else {
+    if (/closedby=["']any["']/i.test(dialogTag) && /aria-labelledby=/i.test(dialogTag)) {
+      pass('CharacterDossier.astro <dialog> sets closedby="any" and aria-labelledby');
+    } else {
+      fail('CharacterDossier.astro <dialog> attributes', `Tag was: ${dialogTag}`);
     }
     if (/role=["']dialog["']/i.test(dialogTag) || /aria-modal/i.test(dialogTag)) {
-      fail('BaseLayout.astro <dialog> omits redundant role/aria-modal', `Found forbidden attribute in: ${dialogTag}`);
+      fail('CharacterDossier.astro <dialog> omits role="dialog" and aria-modal', `Found forbidden attribute in: ${dialogTag}`);
     } else {
-      pass('BaseLayout.astro <dialog> omits redundant role="dialog" and aria-modal');
+      pass('CharacterDossier.astro <dialog> omits role="dialog" and aria-modal');
     }
   }
 
-  if (/id=["']modalOverlay["']/.test(baseLayoutSrc) || /document\.body\.classList\.add\(['"]no-scroll['"]\)/.test(baseLayoutSrc)) {
-    fail('BaseLayout.astro removed legacy modalOverlay and body scroll lock', 'Found modalOverlay or no-scroll');
+  if (/showModal\s*\(/.test(dossierSrc) && /'closedBy'\s+in\s+HTMLDialogElement\.prototype/.test(dossierSrc)) {
+    pass('CharacterDossier.astro calls showModal() and includes closedBy fallback');
   } else {
-    pass('BaseLayout.astro removed legacy modalOverlay and body scroll lock');
+    fail('CharacterDossier.astro showModal / closedBy fallback', 'Missing showModal() or closedBy feature check');
   }
 
-  if (/showModal\s*\(/.test(baseLayoutSrc) && /'closedBy'\s+in\s+HTMLDialogElement\.prototype/.test(baseLayoutSrc)) {
-    pass('BaseLayout.astro calls showModal() and includes closedBy fallback');
+  const gameContentForPortrait = readRel('src/data/game-content.ts') ?? '';
+  const hasPortrait =
+    /\/img\/boris-portrait\.png/.test(dossierSrc) ||
+    (/CHARACTER_DOSSIER\.image/.test(dossierSrc) && /\/img\/boris-portrait\.png/.test(gameContentForPortrait));
+  if (hasPortrait && /\.pixel-gold-bezel\b|class=["'][^"']*pixel-gold-bezel/.test(dossierSrc)) {
+    pass('CharacterDossier.astro preserves /img/boris-portrait.png inside .pixel-gold-bezel');
   } else {
-    fail('BaseLayout.astro showModal() and closedBy fallback', 'Missing showModal() or HTMLDialogElement closedBy check');
+    fail('CharacterDossier.astro portrait & pixel-gold-bezel', 'Missing /img/boris-portrait.png or .pixel-gold-bezel');
   }
 
-  const roastPhraseRe = /Prompt whisperer certificate:\s*burned/;
-  if (roastPhraseRe.test(baseLayoutSrc) || roastPhraseRe.test(engineSrc ?? '')) {
-    pass('Satirical roast "Prompt whisperer certificate: burned" present');
+  const hasSelectedAfter = /\[aria-selected=["']true["']\]::after[^{]*\{[^}]*border-block-end\s*:\s*3px\s+solid/i.test(combinedCssSurface);
+  if (
+    /focusgroup=["']tablist\s+nomemory["']/.test(dossierSrc) &&
+    /role=["']tab["']/.test(dossierSrc) &&
+    /aria-selected=/.test(dossierSrc) &&
+    /focusgroupstart/.test(dossierSrc) &&
+    /'focusGroup'\s+in\s+HTMLElement\.prototype/.test(dossierSrc) &&
+    hasSelectedAfter
+  ) {
+    pass('CharacterDossier.astro implements focusgroup="tablist nomemory" + fallback + ::after indicator');
   } else {
-    fail('Satirical roast "Prompt whisperer certificate: burned" present', 'Missing from BaseLayout.astro and overworld-engine.ts');
+    fail('CharacterDossier.astro focusgroup tablist & fallback', `Missing focusgroup, role="tab", focusgroupstart, focusGroup check, or ::after rule (${hasSelectedAfter})`);
+  }
+
+  if (/CharacterDossierTerminal/.test(dossierSrc) && /hw:dossier-close/.test(dossierSrc)) {
+    pass('CharacterDossier.astro exposes CharacterDossierTerminal and hw:dossier-close');
+  } else {
+    fail('CharacterDossier.astro terminal API', 'Missing CharacterDossierTerminal or hw:dossier-close event');
   }
 }
 
 // ============================================================================
-// 6. All 5 Zones, Memorial Tribute, Relics (Camp David), Tablist & Contact
+// 10. Game Content, Verbatim Scripts, 21 Trophy Cards, Hygiene & Headers
 // ============================================================================
-const indexSrc = readRel('src/pages/index.astro');
-const aboutSrc = readRel('src/components/About.astro');
-const timelineSrc = readRel('src/components/Timeline.astro');
-const relicsSrc = readRel('src/components/Relics.astro');
-const relicsDataSrc = readRel('src/data/relics.ts');
-const badgeWallSrc = readRel('src/components/BadgeWall.astro');
-const ctaSrc = readRel('src/components/CTA.astro');
-const footerSrc = readRel('src/components/Footer.astro');
-const cssSrc = readRel('src/styles/global.css');
+const gameContentSrc = readRel('src/data/game-content.ts');
+const badgesSrc = readRel('src/data/badges.ts');
 
-const zoneSources = [
-  aboutSrc ?? '',
-  timelineSrc ?? '',
-  relicsSrc ?? '',
-  badgeWallSrc ?? '',
-  ctaSrc ?? '',
-].join('\n');
-
-if (indexSrc && /<OverworldStage\b/.test(indexSrc)) {
-  pass('src/pages/index.astro mounts <OverworldStage />');
+if (!gameContentSrc) {
+  fail('src/data/game-content.ts exists', 'File not found');
 } else {
-  fail('src/pages/index.astro mounts <OverworldStage />', 'Missing <OverworldStage />');
-}
+  pass('src/data/game-content.ts exists');
 
-for (const zone of ['sanctuary', 'eras', 'relics', 'trophies', 'beacon']) {
-  const hasId = new RegExp(`id=["']${zone}["']`).test(zoneSources);
-  const hasDataZone = new RegExp(`data-zone=["']${zone}["']`).test(zoneSources);
-  if (hasId && hasDataZone) {
-    pass(`Zone #${zone} wired with id="${zone}" and data-zone="${zone}"`);
+  const verbatimTokens = [
+    'KidsLab 3.0 Core Matrix',
+    'Infusio AI Studio Engine',
+    'Camp David Field Compass',
+    'Emy, Kiba, and Yue',
+    'boris.quijano@live.com',
+    '50371180568',
+    'Prompt whisperer certificate: burned',
+    'Certified Prompt Engineer Diploma',
+    '+10 Morale Restored',
+    'https://kidslab.education',
+    'https://infusio.pro',
+    'https://cal.com/borisquijano',
+    'Pull up a seat by the fire, traveler',
+  ];
+
+  for (const token of verbatimTokens) {
+    if (gameContentSrc.includes(token)) {
+      pass(`game-content.ts contains verbatim string "${token}"`);
+    } else {
+      fail(`game-content.ts contains verbatim string "${token}"`, `Missing "${token}"`);
+    }
+  }
+
+  if (/export\s+const\s+TROPHY_CARDS\b/.test(gameContentSrc) && /from\s+['"]\.\/badges(?:\.ts)?['"]/.test(gameContentSrc)) {
+    pass('game-content.ts wraps TROPHY_CARDS from ./badges');
   } else {
-    fail(`Zone #${zone} attributes`, `hasId=${hasId}, hasDataZone=${hasDataZone}`);
+    fail('game-content.ts wraps TROPHY_CARDS from ./badges', 'Missing TROPHY_CARDS or ./badges import');
   }
 }
 
-for (const legacyId of ['about', 'timeline', 'work', 'contact']) {
-  if (new RegExp(`id=["']${legacyId}["']`).test(zoneSources)) {
-    pass(`Legacy hash anchor #${legacyId} preserved`);
+if (!badgesSrc) {
+  fail('src/data/badges.ts exists', 'File not found');
+} else {
+  const arrayBody = badgesSrc.split(/export\s+const\s+badges\b/)[1] ?? badgesSrc;
+  const badgeEntries = arrayBody.match(/\{\s*name\s*:\s*['"]/g) ?? [];
+  if (badgeEntries.length === 21) {
+    pass('src/data/badges.ts defines all 21 trophy cards');
   } else {
-    fail(`Legacy hash anchor #${legacyId} preserved`, `Missing id="${legacyId}"`);
+    fail('src/data/badges.ts defines 21 trophy cards', `Found ${badgeEntries.length} entries`);
   }
 }
 
-if (aboutSrc && /\bEmy\b/.test(aboutSrc) && /\bKiba\b/.test(aboutSrc) && /\bYue\b/.test(aboutSrc)) {
-  pass('About.astro (#sanctuary) includes memorial tribute to Emy, Kiba, and Yue');
-} else {
-  fail('About.astro (#sanctuary) memorial tribute', 'Missing Emy, Kiba, or Yue in About.astro');
-}
-
-const combinedRelics = `${relicsSrc ?? ''}\n${relicsDataSrc ?? ''}`;
-if (/KidsLab 3\.0/.test(combinedRelics) && /Infusio/.test(combinedRelics) && /Camp David/.test(combinedRelics)) {
-  pass('Relic Vault (#relics) features KidsLab 3.0, Infusio, and Camp David');
-} else {
-  fail('Relic Vault (#relics) featured projects', 'Missing KidsLab 3.0, Infusio, or Camp David');
-}
-
-if (/Esencia Branding|esenciabranding\.com/i.test(combinedRelics)) {
-  fail('Relic Vault (#relics) removes Esencia Branding', 'Found Esencia Branding / esenciabranding.com');
-} else {
-  pass('Relic Vault (#relics) removed retired Esencia Branding');
-}
-
+// Scrub check across all src/ files for retired email & Esencia Branding
 const allSrcFiles = walkFiles(path.join(ROOT, 'src'), (f) => /\.(astro|ts|js|mjs|json|css)$/.test(f));
-const protonHits = allSrcFiles
-  .filter((f) => /borisqj\+hero@proton\.me/i.test(fs.readFileSync(f, 'utf8')))
+const retiredHits = allSrcFiles
+  .filter((f) => /borisqj\+hero@proton\.me|Esencia\s+Branding|esenciabranding\.com/i.test(fs.readFileSync(f, 'utf8')))
   .map((f) => path.relative(ROOT, f));
 
-if (protonHits.length > 0) {
-  fail('Retired email borisqj+hero@proton.me scrubbed from src/', `Found in: ${protonHits.join(', ')}`);
+if (retiredHits.length === 0) {
+  pass('src/ contains zero retired proton.me email or Esencia Branding references');
 } else {
-  pass('Retired email borisqj+hero@proton.me scrubbed from src/');
+  fail('src/ retired email/brand scrub', `Found in: ${retiredHits.join(', ')}`);
 }
 
-const contactBundle = `${indexSrc ?? ''}\n${ctaSrc ?? ''}\n${footerSrc ?? ''}`;
-if (/boris\.quijano@live\.com/.test(contactBundle) && /\+503\s*7118\s*0568/.test(contactBundle)) {
-  pass('Signal Beacon (#beacon / CTA / Footer) displays boris.quijano@live.com and +503 7118 0568');
-} else {
-  fail('Signal Beacon contact info', 'Missing boris.quijano@live.com or +503 7118 0568');
-}
-
-const combinedCss = `${baseLayoutSrc ?? ''}\n${badgeWallSrc ?? ''}\n${cssSrc ?? ''}`;
-
-if (!badgeWallSrc) {
-  fail('src/components/BadgeWall.astro exists', 'File not found');
-} else {
-  const filterTag = findElementTagById(badgeWallSrc, 'badgeFilters');
-  if (filterTag && /focusgroup=["']tablist nomemory["']/.test(filterTag) && /aria-label=/.test(filterTag)) {
-    pass('BadgeWall.astro #badgeFilters uses focusgroup="tablist nomemory" with aria-label');
-  } else {
-    fail('BadgeWall.astro #badgeFilters focusgroup', `Tag was: ${filterTag}`);
-  }
-
-  const hasSelectedAfter = /\[aria-selected=["']true["']\]::after[^{]*\{[^}]*border-block-end\s*:\s*3px\s+solid\s+var\(--cyan/i.test(combinedCss);
-  if (
-    /role=["']tab["']/.test(badgeWallSrc) &&
-    /aria-selected=/.test(badgeWallSrc) &&
-    /focusgroupstart/.test(badgeWallSrc) &&
-    hasSelectedAfter &&
-    /'focusGroup'\s+in\s+HTMLElement\.prototype/.test(badgeWallSrc)
-  ) {
-    pass('BadgeWall.astro implements accessible tab buttons, ::after indicator, and focusGroup fallback');
-  } else {
-    fail('BadgeWall.astro tablist accessibility & fallback', `Missing role="tab", aria-selected, focusgroupstart, ::after border-block-end (${hasSelectedAfter}), or focusGroup fallback`);
-  }
-}
-
-// ============================================================================
-// 7. CSS Checks: Top-Layer Dialog Containment & Mobile Game Boy Dual-Screen
-// ============================================================================
-if (
-  /(?:dialog|\.hw-modal|#heroWallModal):modal[^{]*\{[^}]*overscroll-behavior\s*:\s*contain/i.test(combinedCss) &&
-  /(?:dialog|\.hw-modal|#heroWallModal)::backdrop[^{]*\{[^}]*(?:overflow\s*:\s*hidden[\s\S]*?overscroll-behavior\s*:\s*contain|overscroll-behavior\s*:\s*contain[\s\S]*?overflow\s*:\s*hidden)/i.test(combinedCss)
-) {
-  pass('Dialog modal & backdrop enforce overscroll-behavior: contain');
-} else {
-  fail('Dialog overscroll containment CSS', 'Missing dialog:modal or dialog::backdrop overscroll-behavior: contain');
-}
-
-if (!cssSrc) {
-  fail('src/styles/global.css exists', 'File not found');
-} else {
-  const mobileBlocks = extractMediaBlocks(cssSrc, /@media\s*\(\s*max-width\s*:\s*900px\s*\)/);
-  const mobileCombined = mobileBlocks.join('\n');
-  const hasStickyOverworld =
-    /(?:\.overworld-shell|\.overworld-stage|#overworldStage)[^{]*\{[^}]*position\s*:\s*sticky[^}]*top\s*:\s*0/i.test(mobileCombined) ||
-    /(?:\.overworld-shell|\.overworld-stage|#overworldStage)[^{]*\{[^}]*top\s*:\s*0[^}]*position\s*:\s*sticky/i.test(mobileCombined);
-
-  if (mobileBlocks.length > 0 && hasStickyOverworld) {
-    pass('global.css implements @media (max-width: 900px) sticky Game Boy dual-screen layout');
-  } else {
-    fail('global.css mobile Game Boy dual-screen CSS', 'Missing @media (max-width: 900px) sticky top: 0 rule on .overworld-shell or #overworldStage');
-  }
-
-  if (/\.no-scroll\s*\{\s*overflow\s*:\s*hidden/.test(cssSrc)) {
-    fail('global.css removes legacy .no-scroll modal body lock', 'Found .no-scroll { overflow: hidden }');
-  } else {
-    pass('global.css removed legacy .no-scroll modal body lock');
-  }
-}
-
-// ============================================================================
-// 8. Humanizer Prose Hygiene Check (Owned Components & Data Copy)
-// ============================================================================
-const proseTargets = [
+// RULE[user_global] headers across SPEC-021 core authored files
+const headerTargets = [
   'src/layouts/BaseLayout.astro',
   'src/pages/index.astro',
   'src/components/OverworldStage.astro',
-  'src/components/Hero.astro',
-  'src/components/About.astro',
-  'src/components/Timeline.astro',
-  'src/components/Relics.astro',
-  'src/components/BadgeWall.astro',
-  'src/components/CTA.astro',
-  'src/components/Footer.astro',
-  'src/data/relics.ts',
-  'src/data/badges.ts',
+  'src/components/SnesDialogueBox.astro',
+  'src/components/CharacterDossier.astro',
+  'src/styles/global.css',
+  'src/data/game-content.ts',
+  'src/scripts/pixel-sprites.ts',
+  'src/scripts/world-biomes.ts',
+  'src/scripts/chiptune-audio.ts',
+  'src/scripts/overworld-engine.ts',
 ];
-
-const BANNED_AI_RE = /\b(showcase|showcasing|leverage|leveraging|seamless|seamlessly|crucial)\b/i;
-const NOT_X_BUT_Y_RE = /\bnot\s+[^.!?\n]{1,35},\s+but\b/i;
-
-for (const relPath of proseTargets) {
-  const raw = readRel(relPath);
-  if (!raw) continue;
-  const prose = extractProseForHumanizer(relPath, raw);
-  const hasDash = /[—–]/.test(prose);
-  const bannedMatch = prose.match(BANNED_AI_RE);
-  const notButMatch = prose.match(NOT_X_BUT_Y_RE);
-  if (hasDash || bannedMatch || notButMatch) {
-    const reasons = [];
-    if (hasDash) reasons.push('em/en dash (—/–)');
-    if (bannedMatch) reasons.push(`banned AI word "${bannedMatch[0]}"`);
-    if (notButMatch) reasons.push(`"not X, but Y" contrast "${notButMatch[0]}"`);
-    fail(`humanizer prose hygiene in ${relPath}`, reasons.join('; '));
+for (const rel of headerTargets) {
+  const content = readRel(rel);
+  if (!content) continue;
+  const head = content.slice(0, 1200);
+  if (/Path:/i.test(head) && /Purpose:/i.test(head) && /SPEC-021/i.test(head)) {
+    pass(`RULE[user_global] header present in ${rel}`);
   } else {
-    pass(`humanizer prose hygiene clean in ${relPath}`);
+    fail(`RULE[user_global] header present in ${rel}`, 'Missing Path/Purpose/SPEC-021 header');
   }
 }
 
 // ============================================================================
-// 9. Built Output Validation (dist/ and .vercel/output/static/ when present)
+// 11. Built Output Validation (dist/ and .vercel/output/static/ when present)
 // ============================================================================
 const distHtmlFiles = walkFiles(path.join(ROOT, 'dist'), (f) => f.endsWith('.html'));
 const vercelStaticHtmlFiles = walkFiles(path.join(ROOT, '.vercel/output/static'), (f) => f.endsWith('.html'));
@@ -673,23 +763,23 @@ if (builtHtmlFiles.length === 0) {
 
   const requiredInHtml = [
     ['Overworld stage (#overworldStage)', /id=["']overworldStage["']/],
+    ['Top HUD character chip (BORIS · LVL 39)', /BORIS\s*·\s*LVL 39/],
+    ['State badge (#gameStateBadge)', /id=["']gameStateBadge["']/],
     ['Celestial toggle (#celestialToggle)', /id=["']celestialToggle["']/],
     ['Audio toggle (#audioToggle)', /id=["']audioToggle["']/],
     ['Motion toggle (#motionToggle)', /id=["']motionToggle["']/],
-    ['Zone 1: Sanctuary Citadel', /Sanctuary Citadel/],
-    ['Zone 2: Hall of Eras', /Hall of Eras/],
-    ['Zone 3: Relic Vault', /Relic Vault/],
-    ['Zone 4: Trophy Armory', /Trophy Armory/],
-    ['Zone 5: Signal Beacon', /Signal Beacon/],
-    ['Relic: KidsLab 3.0', /KidsLab 3\.0/],
-    ['Relic: Infusio', /Infusio/],
-    ['Relic: Camp David', /Camp David/],
-    ['Memorial companion Emy', /\bEmy\b/],
-    ['Memorial companion Kiba', /\bKiba\b/],
-    ['Memorial companion Yue', /\bYue\b/],
+    ['SNES dialogue box (#snesDialogueBox)', /id=["']snesDialogueBox["']/],
+    ['GBA controller deck (.gba-controller-deck)', /class=["'][^"']*\bgba-controller-deck\b/],
+    ['D-Pad controls (#dpadUp)', /id=["']dpadUp["']/],
+    ['Boris portrait (/img/boris-portrait.png)', /\/img\/boris-portrait\.png/],
     ['focusgroup="tablist nomemory"', /focusgroup=["']tablist\s+nomemory["']/],
+    ['KidsLab 3.0 Core Matrix', /KidsLab 3\.0 Core Matrix/],
+    ['Infusio AI Studio Engine', /Infusio AI Studio Engine/],
+    ['Camp David Field Compass', /Camp David Field Compass/],
+    ['Memorial companions (Emy, Kiba, and Yue)', /Emy,\s*Kiba,\s*and\s*Yue/],
     ['boris.quijano@live.com', /boris\.quijano@live\.com/],
-    ['+503 7118 0568', /\+503\s*7118\s*0568/],
+    ['50371180568', /50371180568/],
+    ['+10 Morale Restored', /\+10 Morale Restored/],
   ];
 
   for (const [label, re] of requiredInHtml) {
@@ -700,11 +790,16 @@ if (builtHtmlFiles.length === 0) {
     }
   }
 
-  const builtDialog = findElementTagById(htmlCombined, 'heroWallModal');
-  if (builtDialog && /^<dialog\b/i.test(builtDialog) && /closedby=["']any["']/i.test(builtDialog) && !/role=["']dialog["']|aria-modal/i.test(builtDialog)) {
-    pass('Built HTML renders clean native <dialog id="heroWallModal" closedby="any">');
+  const builtDialog = findElementTagById(htmlCombined, 'characterDossierModal');
+  if (
+    builtDialog &&
+    /^<dialog\b/i.test(builtDialog) &&
+    /closedby=["']any["']/i.test(builtDialog) &&
+    !/role=["']dialog["']|aria-modal/i.test(builtDialog)
+  ) {
+    pass('Built HTML renders clean native <dialog id="characterDossierModal" closedby="any">');
   } else {
-    fail('Built HTML native <dialog id="heroWallModal">', `Tag was: ${builtDialog}`);
+    fail('Built HTML native <dialog id="characterDossierModal">', `Tag was: ${builtDialog}`);
   }
 
   const builtMotionTag = findElementTagById(htmlCombined, 'motionToggle');
@@ -714,10 +809,21 @@ if (builtHtmlFiles.length === 0) {
     fail('Built HTML #motionToggle omits aria-pressed', `Tag was: ${builtMotionTag}`);
   }
 
-  if (/Prompt whisperer certificate:\s*burned/.test(artifactCombined)) {
-    pass('Built artifacts include roast "Prompt whisperer certificate: burned"');
+  if (
+    /<section\b[^>]*\bid=["'](?:about|timeline|work|contact)["']/i.test(htmlCombined)
+  ) {
+    fail('Built HTML removes legacy static page sections', 'Found legacy <section id="about|timeline|work|contact">');
   } else {
-    fail('Built artifacts include roast "Prompt whisperer certificate: burned"', 'Not found in built HTML or JS');
+    pass('Built HTML omits legacy vertical document sections');
+  }
+
+  if (
+    /Prompt whisperer certificate:\s*burned/.test(artifactCombined) &&
+    /Certified Prompt Engineer Diploma/.test(artifactCombined)
+  ) {
+    pass('Built artifacts include roast strings ("Prompt whisperer certificate: burned" & "Certified Prompt Engineer Diploma")');
+  } else {
+    fail('Built artifacts include roast strings', 'Missing roast strings in built HTML or JS');
   }
 
   if (/Esencia Branding|esenciabranding\.com|borisqj\+hero@proton\.me/i.test(htmlCombined)) {

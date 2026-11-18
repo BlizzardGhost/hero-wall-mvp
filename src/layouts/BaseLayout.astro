@@ -1,13 +1,18 @@
 ---
 /*
  * Path: src/layouts/BaseLayout.astro
- * Purpose: Root HTML shell, JSON-LD metadata, native top-layer heroWallModal dialog,
- *          satirical AI hype roasts, memorial companion dialog fallback, and horizontal belt wiring.
- * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ * Purpose: Pure fixed-viewport HTML5 shell for SPEC-021 loading global SNES RPG styles,
+ *          Press Start 2P + Inter typography, high-priority /img/boris-portrait.png preload,
+ *          and structured JSON-LD metadata without legacy parallax overlays or document modals.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Zero document scrolling is enforced via global.css (100dvh / overflow: hidden).
+ * - SnesDialogueBox and CharacterDossier own all in-game overlays and modal dialogs.
  */
 const {
-  title = "Boris Quijano | LATAM AI Sherpa & Narrative Architect",
-  description = "Digital Strategist, Narrative Architect & AI Systems Builder."
+  title = "Boris Quijano | 16-Bit RPG Overworld — LATAM AI Sherpa",
+  description = "Playable 16-bit RPG overworld portfolio for Boris Quijano, LATAM AI Sherpa and Narrative Architect in El Salvador."
 } = Astro.props;
 
 import '../styles/global.css';
@@ -20,7 +25,7 @@ const OG_IMG = `${SITE}/og/hero-wall-og.png`;
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <!-- Iconify runtimes -->
+    <!-- Iconify runtimes for Character Dossier loadout & trophy glyphs -->
     <script defer src="https://code.iconify.design/3/3.1.1/iconify.min.js"></script>
     <script defer src="https://code.iconify.design/iconify-icon/1.0.8/iconify-icon.min.js"></script>
 
@@ -28,15 +33,15 @@ const OG_IMG = `${SITE}/og/hero-wall-og.png`;
     <meta name="description" content={description} />
     <link rel="canonical" href={SITE} />
 
-    <!-- Social -->
+    <!-- Social metadata -->
     <meta property="og:type" content="website" />
     <meta property="og:url" content={SITE} />
-    <meta property="og:title" content="Your Hero for AI-Powered Web Systems" />
-    <meta property="og:description" content="Sites and AI systems that save your time and ship measurable results." />
+    <meta property="og:title" content="Boris Quijano | 16-Bit RPG Overworld" />
+    <meta property="og:description" content="Explore five SNES biomes, meet the party, and inspect real shipped AI systems." />
     <meta property="og:image" content={OG_IMG} />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <!-- JSON-LD -->
+    <!-- Structured Person metadata -->
     <script type="application/ld+json" set:html={JSON.stringify({
       "@context": "https://schema.org",
       "@type": "Person",
@@ -47,270 +52,22 @@ const OG_IMG = `${SITE}/og/hero-wall-og.png`;
       sameAs: ["https://github.com/BlizzardGhost"]
     })} />
 
-    <!-- Fonts -->
+    <!-- Retro arcade & readable UI fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Press+Start+2P&display=swap" rel="stylesheet" />
 
-    <!-- Favicon -->
+    <!-- Pixel shield favicon -->
     <link
       rel="icon"
-      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 fill=%22%231C3B54%22/><path d=%22M32 8l8 10h-16zM24 40h6v10h-6zM34 40h6v10h-6z%22 fill=%22%23FFD166%22/></svg>"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 64 64%22><rect width=%2264%22 height=%2264%22 fill=%22%23090d16%22/><path d=%22M32 8l12 12H20zM22 38h8v14h-8zM34 38h8v14h-8z%22 fill=%22%23facc15%22/></svg>"
     />
 
-    <!-- LCP background image preload -->
-    <link rel="preload" href="/img/hero.png" as="image" fetchpriority="high" />
+    <!-- Preload Boris's authentic Character Dossier portrait at high priority -->
+    <link rel="preload" href="/img/boris-portrait.png" as="image" fetchpriority="high" />
   </head>
   <body>
-    <a href="#main" class="skip-link visually-hidden">Skip to main content</a>
-
-    <!-- Parallax world -->
-    <div class="parallax" aria-hidden="true">
-      <div class="layer mountains"></div>
-      <div class="layer clouds"></div>
-    </div>
-
-    <!-- Page content -->
+    <a href="#main" class="skip-link visually-hidden">Skip to game stage</a>
     <slot />
-
-    <!-- Native Top-Layer Modal (<dialog> Rule 1: showModal/close, closedby="any", no role="dialog" or aria-modal) -->
-    <dialog id="heroWallModal" class="hw-modal" closedby="any" aria-labelledby="modalTitle">
-      <div class="hw-modal-frame">
-        <div class="modal-header">
-          <div class="hw-modal-heading">
-            <span id="modalTag" class="hw-modal-tag" hidden></span>
-            <h2 id="modalTitle" class="hw-modal-title">Transmission</h2>
-          </div>
-          <button class="hw-modal-close-icon" id="modalX" type="button" aria-label="Close dialog">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M6 6l12 12M18 6l-12 12"></path>
-            </svg>
-          </button>
-        </div>
-        <div id="modalBody" class="modal-body"></div>
-        <div class="modal-actions">
-          <button class="modal-close" id="modalOk" type="button" autofocus>OK</button>
-        </div>
-      </div>
-    </dialog>
-
-    <!-- Scripts -->
-    <script>
-      // Parallax scroll variable
-      function onScroll() {
-        document.documentElement.style.setProperty('--scroll', String(window.scrollY || 0));
-      }
-      document.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-
-      // ===== Native Top-Layer Modal + Satirical Roasts & Memorial Tribute =====
-      if (!window.__HeroWallWired__) {
-        window.__HeroWallWired__ = true;
-
-        const dialog = document.getElementById('heroWallModal');
-        const bodyEl = document.getElementById('modalBody');
-        const titleEl = document.getElementById('modalTitle');
-        const tagEl = document.getElementById('modalTag');
-        const closeBtn = document.getElementById('modalOk');
-        const closeXBtn = document.getElementById('modalX');
-
-        // Opt-in debug tracer for operators (`window.__RASS_ZONE_DEBUG__ = true`)
-        const debugLog = (...args) => {
-          if (window.__RASS_ZONE_DEBUG__) {
-            console.debug('[HeroWall:Zone]', ...args);
-          }
-        };
-
-        // Grounded satirical AI hype & corporate theater roasts (zero em/en dashes)
-        const ROASTS = [
-          "Prompt whisperer certificate: burned",
-          "Your 47-agent swarm spent $14 in tokens to reformat a two-column CSV.",
-          "Corporate ladder update: still a treadmill with a darker gradient.",
-          "Adding 'AI-powered' to a contact form did not create a moat.",
-          "Stand-up telemetry: everyone stood, nothing shipped.",
-          "If a decision takes a 14-slide pre-read, nobody wants to own it.",
-          "KPI audit: 120% slide deck velocity, 0% working software.",
-          "Culture memo: we are like a family. Great, who is doing the dishes?"
-        ];
-
-        const MEMORIAL_PARAGRAPHS = [
-          "A white pixel dog trots beside Boris across every zone of this overworld in memory of Emy, Kiba, and Yue.",
-          "They were part of daily life in Medellin before the return home to El Salvador, and their loyalty stays stitched into this map."
-        ];
-
-        let roastCursor = 0;
-        const nextRoast = () => {
-          const roast = ROASTS[roastCursor % ROASTS.length];
-          roastCursor += 1;
-          return roast;
-        };
-
-        function isEditableTarget(target) {
-          if (!(target instanceof Element)) return false;
-          const tag = target.tagName;
-          return (
-            tag === 'INPUT' ||
-            tag === 'TEXTAREA' ||
-            tag === 'SELECT' ||
-            target.isContentEditable
-          );
-        }
-
-        function openModal({ title = "Field Transmission", html = "", body = null, tag = "", eyebrow = "", roast = false } = {}) {
-          if (!dialog || !titleEl || !bodyEl) return;
-          titleEl.textContent = title;
-
-          const badgeText = tag || eyebrow;
-          if (tagEl) {
-            if (badgeText) {
-              tagEl.textContent = badgeText;
-              tagEl.hidden = false;
-            } else {
-              tagEl.textContent = "";
-              tagEl.hidden = true;
-            }
-          }
-
-          bodyEl.replaceChildren();
-
-          if (Array.isArray(body) && body.length > 0) {
-            for (const line of body) {
-              const p = document.createElement('p');
-              p.textContent = String(line);
-              bodyEl.appendChild(p);
-            }
-          } else if (typeof body === 'string' && body.trim()) {
-            const p = document.createElement('p');
-            p.textContent = body;
-            bodyEl.appendChild(p);
-          } else if (html) {
-            bodyEl.innerHTML = html;
-          }
-
-          if (roast || (!html && !body)) {
-            const roastLine = document.createElement('p');
-            roastLine.className = 'roast-callout';
-            roastLine.textContent = nextRoast();
-            bodyEl.appendChild(roastLine);
-          }
-
-          if (!dialog.open) {
-            dialog.showModal();
-          }
-          debugLog('modal:open', { title, badgeText });
-        }
-
-        function closeModal(reason = 'action') {
-          if (dialog && dialog.open) {
-            dialog.close(reason);
-          }
-          debugLog('modal:close', { reason });
-        }
-
-        // Reset returnValue on close so stale button values never leak across opens
-        dialog?.addEventListener('close', () => {
-          dialog.returnValue = '';
-        });
-
-        closeBtn?.addEventListener('click', () => closeModal('ok'));
-        closeXBtn?.addEventListener('click', () => closeModal('close-x'));
-
-        // Progressive enhancement fallback when browser lacks <dialog closedby="any">
-        if (!('closedBy' in HTMLDialogElement.prototype)) {
-          // Check bounding rectangle rather than event.target: clicks on dialog padding
-          // also target the <dialog> element and must not dismiss it.
-          const outside = (e, dlg) => {
-            const r = dlg.getBoundingClientRect();
-            return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
-          };
-          for (const dlg of document.querySelectorAll('dialog[closedby="any"]')) {
-            let pressedOutside = false;
-            dlg.addEventListener('pointerdown', (e) => {
-              pressedOutside = dlg.open && outside(e, dlg);
-            });
-            // Require press and release outside so text-selection drags onto the backdrop stay open.
-            dlg.addEventListener('pointerup', (e) => {
-              if (pressedOutside && dlg.open && outside(e, dlg)) {
-                dlg.close('backdrop');
-              }
-              pressedOutside = false;
-            });
-          }
-        }
-
-        function openRoastChest() {
-          openModal({
-            title: "Siege Roast Chest",
-            tag: "ROAST DROP",
-            body: ["Built by RASS & Ms. Devil, Directed by Boris."],
-            roast: true
-          });
-        }
-
-        function openMemorialTribute() {
-          openModal({
-            title: "White Dog Memorial: Emy, Kiba, and Yue",
-            tag: "MEMORIAL",
-            body: MEMORIAL_PARAGRAPHS
-          });
-        }
-
-        // Defer hotkey fallback via microtask so OverworldController's window keydown listener
-        // executes first (playing chiptune SFX, spawning heart/chest visuals, and setting __hwHandled).
-        window.addEventListener('keydown', (e) => {
-          if (e.metaKey || e.ctrlKey || e.altKey) return;
-          if (isEditableTarget(e.target)) return;
-          if (dialog?.open) return;
-
-          const key = e.key.toLowerCase();
-          if (key !== 'r' && key !== 'c' && key !== 'b') return;
-
-          queueMicrotask(() => {
-            if (e.__hwHandled || e.defaultPrevented || dialog?.open) return;
-            if (key === 'r' || key === 'c') {
-              openRoastChest();
-            } else if (key === 'b') {
-              openMemorialTribute();
-            }
-          });
-        });
-
-        // Delegated UI button triggers for roast chest, memorial tribute, and legacy badge buttons
-        document.addEventListener('click', (e) => {
-          const stage = document.getElementById('overworldStage');
-          const overworldActive = stage?.dataset?.overworldMounted === '1';
-
-          const roastTrigger = e.target.closest('[data-open-roast]');
-          if (roastTrigger) {
-            const owChest = overworldActive ? document.getElementById('roastChestTrigger') : null;
-            if (owChest) {
-              owChest.click();
-            } else {
-              openRoastChest();
-            }
-            return;
-          }
-          const memorialTrigger = e.target.closest('[data-open-memorial]');
-          if (memorialTrigger) {
-            const owDog = overworldActive ? document.getElementById('dogPetTrigger') : null;
-            if (owDog) {
-              owDog.click();
-            } else {
-              openMemorialTribute();
-            }
-            return;
-          }
-          const badgeBtn = e.target.closest('button.badge');
-          if (badgeBtn) {
-            const badgeTitle = badgeBtn.dataset.title || 'Badge';
-            const caption = badgeBtn.dataset.caption || badgeBtn.dataset.html || '';
-            openModal({ title: badgeTitle, html: caption ? `<p>${caption}</p>` : "" });
-          }
-        });
-
-        window.HeroWallRoasts = ROASTS;
-        window.HeroWallModal = { open: openModal, close: closeModal };
-      }
-    </script>
   </body>
 </html>

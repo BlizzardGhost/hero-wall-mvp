@@ -1,0 +1,780 @@
+---
+/*
+ * Path: src/components/CharacterDossier.astro
+ * Purpose: Native top-layer <dialog id="characterDossierModal"> RPG Character Dossier &
+ *          5-tab Terminal (Status & Bio, Hall of Eras, Relic Vault, Trophy Armory, Signal Beacon)
+ *          preserving Boris Quijano's portrait in a pixelated gold bezel and all 21 trophy cards.
+ * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ *
+ * Operator Notes:
+ * - Implements modern-web-guidance `dialog` Rule 1: showModal()/close(), closedby="any",
+ *   no redundant role="dialog" or aria-modal, returnValue reset on close, and bounding-box
+ *   pointerdown/pointerup fallback when !('closedBy' in HTMLDialogElement.prototype).
+ * - Implements modern-web-guidance `tabs`: focusgroup="tablist nomemory", role="tab",
+ *   aria-selected, focusgroupstart, hidden="until-found" with beforematch find-in-page sync,
+ *   and roving-tabindex Arrow/Home/End fallback when !('focusGroup' in HTMLElement.prototype).
+ */
+
+import {
+  CHARACTER_DOSSIER,
+  HALL_OF_ERAS,
+  RELIC_VAULT,
+  SIGNAL_BEACON,
+  TROPHY_ARMORY,
+  TROPHY_CARDS,
+} from '../data/game-content';
+
+const unlockedCount = TROPHY_CARDS.filter((card) => card.earned).length;
+const pendingCount = TROPHY_CARDS.filter((card) => card.isPending).length;
+const ultimateCount = TROPHY_CARDS.filter((card) => card.tier === 'ultimate').length;
+const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
+---
+
+<dialog
+  id="characterDossierModal"
+  class="hw-modal dossier-modal"
+  closedby="any"
+  aria-labelledby="dossierModalTitle"
+>
+  <div class="hw-modal-frame dossier-frame">
+    <header class="modal-header dossier-header">
+      <div class="hw-modal-heading">
+        <span class="hw-modal-tag">SOVEREIGN TERMINAL · [C / START]</span>
+        <h2 id="dossierModalTitle" class="hw-modal-title">
+          {CHARACTER_DOSSIER.name} · {CHARACTER_DOSSIER.level}
+        </h2>
+      </div>
+      <button
+        id="dossierCloseBtn"
+        class="hw-modal-close-icon"
+        type="button"
+        aria-label="Close Character Dossier"
+        autofocus
+      >
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <path d="M6 6l12 12M18 6l-12 12"></path>
+        </svg>
+      </button>
+    </header>
+
+    <!-- Single-row horizontally scrollable tablist per modern-web-guidance tabs -->
+    <div
+      id="dossierTablist"
+      class="dossier-tablist"
+      focusgroup="tablist nomemory"
+      aria-label="Character Dossier Terminal Sections"
+    >
+      <button
+        type="button"
+        role="tab"
+        id="tab-status"
+        class="dossier-tab"
+        data-tab="status"
+        aria-selected="true"
+        focusgroupstart
+      >
+        Status &amp; Bio
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-eras"
+        class="dossier-tab"
+        data-tab="eras"
+        aria-selected="false"
+      >
+        Hall of Eras
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-relics"
+        class="dossier-tab"
+        data-tab="relics"
+        aria-selected="false"
+      >
+        Relic Vault
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-trophies"
+        class="dossier-tab"
+        data-tab="trophies"
+        aria-selected="false"
+      >
+        Trophy Armory ({TROPHY_CARDS.length})
+      </button>
+      <button
+        type="button"
+        role="tab"
+        id="tab-beacon"
+        class="dossier-tab"
+        data-tab="beacon"
+        aria-selected="false"
+      >
+        Signal Beacon
+      </button>
+    </div>
+
+    <!-- Panels share one grid stack; styling lives on inner wrappers so hidden="until-found" collapses cleanly -->
+    <div class="dossier-scroll-body">
+      <div class="dossier-panels-stack">
+        <!-- TAB 1: STATUS & BIO -->
+        <section
+          id="panel-status"
+          role="tabpanel"
+          aria-labelledby="tab-status"
+          data-panel="status"
+          tabindex="0"
+        >
+          <div class="dossier-panel-inner">
+            <div class="dossier-hero-banner">
+              <div class="dossier-portrait-col">
+                <div class="pixel-gold-bezel">
+                  <img
+                    src={CHARACTER_DOSSIER.image}
+                    alt="Boris Quijano portrait"
+                    class="dossier-portrait-img"
+                    width="112"
+                    height="112"
+                  />
+                  <span class="dossier-lvl-stamp">LVL {CHARACTER_DOSSIER.levelNumber}</span>
+                </div>
+              </div>
+
+              <div class="dossier-identity-col">
+                <div class="dossier-pill-row">
+                  <span class="dossier-pill gold">{CHARACTER_DOSSIER.level}</span>
+                  <span class="dossier-pill cyan">{CHARACTER_DOSSIER.protocol}</span>
+                  <span class="dossier-pill grass">{CHARACTER_DOSSIER.location}</span>
+                </div>
+                <h3 class="dossier-char-name">{CHARACTER_DOSSIER.name}</h3>
+                <p class="dossier-char-class">{CHARACTER_DOSSIER.class}</p>
+
+                <div class="dossier-vitals-box" aria-label="Character vitals">
+                  <div class="dossier-vital-row">
+                    <span class="vital-label">HP</span>
+                    <div class="vital-meter hp" aria-hidden="true"><span style="width: 100%"></span></div>
+                    <span class="vital-val">100/100 ({CHARACTER_DOSSIER.hp.label})</span>
+                  </div>
+                  <div class="dossier-vital-row">
+                    <span class="vital-label">MP</span>
+                    <div class="vital-meter mp" aria-hidden="true"><span style="width: 100%"></span></div>
+                    <span class="vital-val">999/999 ({CHARACTER_DOSSIER.mp.label})</span>
+                  </div>
+                  <p class="dossier-vitals-verbatim">{CHARACTER_DOSSIER.vitals}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Equipment Loadout Slots -->
+            <div class="dossier-block">
+              <h4 class="dossier-section-label">SOVEREIGN LOADOUT</h4>
+              <p class="dossier-loadout-summary">{CHARACTER_DOSSIER.loadout}</p>
+              <div class="dossier-equip-grid">
+                {CHARACTER_DOSSIER.loadoutSlots.map((slot) => (
+                  <div class="dossier-equip-card">
+                    <span class="equip-slot">{slot.slot}</span>
+                    <strong class="equip-name">{slot.value}</strong>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <!-- 4 RPG Attribute Meters -->
+            <div class="dossier-block">
+              <h4 class="dossier-section-label">CORE ATTRIBUTES</h4>
+              <div class="dossier-attr-grid">
+                {CHARACTER_DOSSIER.attributes.map((attr) => (
+                  <div class="dossier-attr-item">
+                    <div class="dossier-attr-head">
+                      <span>{attr.label}</span>
+                      <span class="dossier-attr-pct">{attr.value}%</span>
+                    </div>
+                    <div class="dossier-attr-bar" role="progressbar" aria-label={attr.label} aria-valuenow={attr.value} aria-valuemin={0} aria-valuemax={100}>
+                      <span style={`width: ${attr.value}%; background: ${attr.color};`}></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <!-- Sovereign Abstract -->
+            <div class="dossier-block dossier-abstract-box">
+              <h4 class="dossier-section-label">SOVEREIGN ABSTRACT</h4>
+              <p class="dossier-abstract-text">{CHARACTER_DOSSIER.abstract}</p>
+            </div>
+
+            <!-- 13-Chip Tech Loadout -->
+            <div class="dossier-block">
+              <h4 class="dossier-section-label">EQUIPPED TECH LOADOUT ({CHARACTER_DOSSIER.techLoadout.length} MODULES)</h4>
+              <div class="dossier-chip-belt">
+                {CHARACTER_DOSSIER.techLoadout.map((chip) => (
+                  <span class="loadout-chip" data-tip={chip.tip} title={`${chip.name}: ${chip.tip}`}>
+                    <span class="chip-dot" aria-hidden="true"></span>
+                    <span>{chip.name}</span>
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <!-- Memorial Tribute to Emy, Kiba, and Yue -->
+            <aside class="dossier-memorial-box" aria-label="Memorial tribute to Emy, Kiba, and Yue">
+              <div class="dossier-memorial-head">
+                <svg viewBox="0 0 16 16" width="16" height="16" fill="#F4E3C3" aria-hidden="true">
+                  <rect x="2" y="3" width="4" height="3"></rect>
+                  <rect x="10" y="3" width="4" height="3"></rect>
+                  <rect x="1" y="5" width="14" height="4"></rect>
+                  <rect x="3" y="9" width="10" height="3"></rect>
+                  <rect x="5" y="12" width="6" height="2"></rect>
+                  <rect x="7" y="14" width="2" height="1"></rect>
+                </svg>
+                <h4>FAITHFUL COMPANIONS · EMY, KIBA &amp; YUE</h4>
+                <span class="dossier-morale-pill">+10 Morale Restored</span>
+              </div>
+              <p>{CHARACTER_DOSSIER.memorialTribute}</p>
+            </aside>
+          </div>
+        </section>
+
+        <!-- TAB 2: HALL OF ERAS -->
+        <section
+          id="panel-eras"
+          role="tabpanel"
+          aria-labelledby="tab-eras"
+          data-panel="eras"
+          hidden="until-found"
+        >
+          <div class="dossier-panel-inner">
+            <h3 class="dossier-tab-heading">HALL OF ERAS · 5 CHRONICLE MONOLITHS</h3>
+            <p class="dossier-tab-intro">
+              Five obsidian monoliths etched along the expedition road from corporate foundations to sovereign edge intelligence.
+            </p>
+            <ol class="dossier-eras-list">
+              {HALL_OF_ERAS.map((entry, idx) => (
+                <li class="dossier-era-card" style={`--era-accent: ${entry.accent}`}>
+                  <div class="era-card-head">
+                    <span class="era-badge">MONOLITH 0{idx + 1}</span>
+                    <span class="era-year">{entry.year}</span>
+                  </div>
+                  <h4 class="era-name">{entry.era}</h4>
+                  <p class="era-lore">{entry.lore}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <!-- TAB 3: RELIC VAULT -->
+        <section
+          id="panel-relics"
+          role="tabpanel"
+          aria-labelledby="tab-relics"
+          data-panel="relics"
+          hidden="until-found"
+        >
+          <div class="dossier-panel-inner">
+            <h3 class="dossier-tab-heading">CYBER-FORGE RELIC VAULT · SHIPPED SYSTEMS</h3>
+            <p class="dossier-tab-intro">
+              Production artifacts forged for education, autonomous business operations, and grounded field brands.
+            </p>
+            <div class="dossier-relics-grid">
+              {RELIC_VAULT.map((relic) => {
+                const isExternal = relic.url.startsWith('http');
+                return (
+                  <article class="dossier-relic-card">
+                    <span class="relic-cat">{relic.category}</span>
+                    <h4 class="relic-name">{relic.name}</h4>
+                    <div class="relic-stats">{relic.stats}</div>
+                    <p class="relic-lore">{relic.lore}</p>
+                    <div class="relic-actions">
+                      <a
+                        class="dossier-relic-btn"
+                        href={relic.url}
+                        target={isExternal ? '_blank' : undefined}
+                        rel={isExternal ? 'noopener noreferrer' : undefined}
+                        data-compass-link={!isExternal ? 'true' : undefined}
+                      >
+                        {relic.btn}
+                      </a>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+            <p id="dossierRelicStatus" class="dossier-status-note" role="status" aria-live="polite" hidden></p>
+          </div>
+        </section>
+
+        <!-- TAB 4: TROPHY ARMORY (All 21 Cards + Sub-Filters + Lore Toggle) -->
+        <section
+          id="panel-trophies"
+          role="tabpanel"
+          aria-labelledby="tab-trophies"
+          data-panel="trophies"
+          hidden="until-found"
+        >
+          <div class="dossier-panel-inner">
+            <div class="dossier-armory-top">
+              <div>
+                <h3 class="dossier-tab-heading">{TROPHY_ARMORY.title}</h3>
+                <p class="dossier-tab-intro">{TROPHY_ARMORY.lore_intro}</p>
+              </div>
+              <label class="badge-lore-toggle" for="dossierLoreToggle">
+                <input id="dossierLoreToggle" type="checkbox" />
+                <span class="label">Lore Mode</span>
+              </label>
+            </div>
+
+            <div class="dossier-subfilters" id="trophySubFilters" role="group" aria-label="Filter trophy cards">
+              <button type="button" class="dossier-filter-btn" data-filter="all" aria-pressed="true">
+                All ({TROPHY_CARDS.length})
+              </button>
+              <button type="button" class="dossier-filter-btn" data-filter="earned" aria-pressed="false">
+                Unlocked ({unlockedCount})
+              </button>
+              <button type="button" class="dossier-filter-btn" data-filter="pending" aria-pressed="false">
+                Pending ({pendingCount})
+              </button>
+              <button type="button" class="dossier-filter-btn" data-filter="ultimate" aria-pressed="false">
+                Ultimate ({ultimateCount})
+              </button>
+              <button type="button" class="dossier-filter-btn" data-filter="locked" aria-pressed="false">
+                Mystery ({lockedCount})
+              </button>
+            </div>
+
+            <div id="dossierTrophyInspector" class="dossier-trophy-inspector" hidden>
+              <strong id="inspectorTitle"></strong>
+              <p id="inspectorBody"></p>
+            </div>
+
+            <div class="dossier-trophy-grid" id="dossierTrophyGrid">
+              {TROPHY_CARDS.map((card) => {
+                const iconSrc = card.icon.startsWith('/') ? card.icon : `/badges/${card.icon}`;
+                const isVector = card.icon.includes(':');
+                return (
+                  <article
+                    class={`pokemon-card tier-${card.tier} ${card.earned ? 'unlocked' : 'locked'}`}
+                    data-tier={card.tier}
+                    data-earned={card.earned ? 'true' : 'false'}
+                    data-pending={card.isPending ? 'true' : 'false'}
+                    data-mystery={card.isMystery ? 'true' : 'false'}
+                    data-name={card.name}
+                    data-caption={card.caption}
+                    data-lore={card.lore ?? ''}
+                    data-tooltip={card.tooltip ?? ''}
+                  >
+                    <div class="poke-head">
+                      <span class={`poke-type-badge ${card.category}`}>
+                        {card.category.toUpperCase()}
+                      </span>
+                      <span class="poke-hp-xp">
+                        {card.xp != null ? `${card.xp} XP` : '???'}
+                      </span>
+                    </div>
+
+                    <div class="poke-art-frame">
+                      {isVector ? (
+                        <div class="poke-vector-wrap" aria-hidden="true">
+                          <svg class="poke-shield-bg" viewBox="0 0 100 100" width="64" height="64">
+                            <polygon
+                              points="50,6 88,22 88,64 50,94 12,64 12,22"
+                              fill="rgba(250, 204, 21, 0.14)"
+                              stroke="#facc15"
+                              stroke-width="2.5"
+                            />
+                            <rect x="40" y="34" width="20" height="20" fill="#06b6d4" opacity="0.7" />
+                            <rect x="44" y="38" width="12" height="12" fill="#facc15" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <>
+                          <img src={iconSrc} alt={card.name} loading="lazy" data-badge-img />
+                          <div class="poke-fallback-shield" hidden aria-hidden="true">
+                            <svg viewBox="0 0 100 100" width="64" height="64">
+                              <polygon
+                                points="50,6 88,22 88,64 50,94 12,64 12,22"
+                                fill="rgba(250, 204, 21, 0.14)"
+                                stroke="#facc15"
+                                stroke-width="2.5"
+                              />
+                              <circle cx="50" cy="48" r="14" fill="rgba(6, 182, 212, 0.3)" stroke="#06b6d4" stroke-width="2" />
+                            </svg>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    <div class="poke-body">
+                      <h4 class="poke-title">{card.name}</h4>
+                      <p class="poke-caption">{card.caption}</p>
+                      {card.lore && (
+                        <div class="poke-lore-box">
+                          <span class="lore-label">LORE:</span>
+                          <span class="lore-text">{card.lore}</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div class="poke-card-footer">
+                      <span class={`poke-rarity-stamp ${card.tier}`}>{card.rarityLabel}</span>
+                      <div class="poke-footer-actions">
+                        <span class="poke-card-id">{card.cardNumber}</span>
+                        <button type="button" class="poke-inspect-btn">
+                          Inspect<span class="visually-hidden"> {card.name}</span>
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+
+        <!-- TAB 5: SIGNAL BEACON -->
+        <section
+          id="panel-beacon"
+          role="tabpanel"
+          aria-labelledby="tab-beacon"
+          data-panel="beacon"
+          hidden="until-found"
+        >
+          <div class="dossier-panel-inner">
+            <h3 class="dossier-tab-heading">{SIGNAL_BEACON.title}</h3>
+            <p class="dossier-beacon-speaker">OPERATOR: {SIGNAL_BEACON.speaker}</p>
+            <blockquote class="dossier-beacon-quote">
+              {SIGNAL_BEACON.text}
+            </blockquote>
+            <div class="dossier-channels-grid">
+              {SIGNAL_BEACON.channels.map((channel) => {
+                const isHttp = channel.val.startsWith('http');
+                return (
+                  <a
+                    class="dossier-channel-card"
+                    href={channel.val}
+                    target={isHttp ? '_blank' : undefined}
+                    rel={isHttp ? 'noopener noreferrer' : undefined}
+                  >
+                    <span class="channel-type">{channel.type}</span>
+                    <strong class="channel-label">{channel.label}</strong>
+                    <span class="channel-val">{channel.val.replace('mailto:', '')}</span>
+                  </a>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      </div>
+    </div>
+
+    <footer class="modal-actions dossier-footer">
+      <span class="dossier-footer-hint">ESC, Backdrop, or [C] to return to Overworld</span>
+      <button id="dossierFooterCloseBtn" class="modal-close" type="button">
+        Resume Expedition
+      </button>
+    </footer>
+  </div>
+</dialog>
+
+<script>
+  // Client wiring for CharacterDossierTerminal: native <dialog>, focusgroup tabs + fallback,
+  // Trophy Armory sub-filters, Lore Mode persistence, and hw:dossier-close lifecycle event.
+  (() => {
+    const win = window as unknown as {
+      __RASS_DOSSIER_WIRED__?: boolean;
+      __RASS_DOSSIER_DEBUG__?: boolean;
+      CharacterDossierTerminal?: {
+        open: (tabId?: string) => void;
+        close: () => void;
+        selectTab: (tabId: string) => void;
+      };
+    };
+
+    if (win.__RASS_DOSSIER_WIRED__) return;
+    win.__RASS_DOSSIER_WIRED__ = true;
+
+    const dialog = document.getElementById('characterDossierModal') as HTMLDialogElement | null;
+    const tablist = document.getElementById('dossierTablist');
+    const closeBtn = document.getElementById('dossierCloseBtn');
+    const footerCloseBtn = document.getElementById('dossierFooterCloseBtn');
+    const loreToggle = document.getElementById('dossierLoreToggle') as HTMLInputElement | null;
+    const filterGroup = document.getElementById('trophySubFilters');
+    const trophyGrid = document.getElementById('dossierTrophyGrid');
+    const inspector = document.getElementById('dossierTrophyInspector');
+    const inspectorTitle = document.getElementById('inspectorTitle');
+    const inspectorBody = document.getElementById('inspectorBody');
+    const relicStatus = document.getElementById('dossierRelicStatus');
+
+    if (!dialog || !tablist) return;
+
+    const debugLog = (...args: unknown[]) => {
+      if (win.__RASS_DOSSIER_DEBUG__) {
+        console.debug('[HeroWall:CharacterDossier]', ...args);
+      }
+    };
+
+    const tabs = Array.from(tablist.querySelectorAll<HTMLButtonElement>('[role="tab"]'));
+    const panels = Array.from(dialog.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
+    const hasNativeFocusGroup = 'focusGroup' in HTMLElement.prototype;
+
+    // Normalize both tab IDs and BiomeIds so OverworldStage / DialogueBox callers open cleanly.
+    const normalizeTabId = (raw?: string): string => {
+      const value = (raw ?? 'status').toLowerCase().trim();
+      if (value === 'sanctuary' || value === 'bio' || value === 'status') return 'status';
+      if (value === 'eras' || value === 'timeline' || value === 'hall-of-eras') return 'eras';
+      if (value === 'relics' || value === 'work' || value === 'relic-vault') return 'relics';
+      if (value === 'trophies' || value === 'badges' || value === 'trophy-armory') return 'trophies';
+      if (value === 'beacon' || value === 'contact' || value === 'signal-beacon') return 'beacon';
+      return 'status';
+    };
+
+    const selectTab = (tabId: string, focusTab = false) => {
+      const normalized = normalizeTabId(tabId);
+      const targetTab = tabs.find((t) => t.dataset.tab === normalized) ?? tabs[0];
+      if (!targetTab) return;
+
+      for (const tab of tabs) {
+        const active = tab === targetTab;
+        tab.setAttribute('aria-selected', String(active));
+        tab.toggleAttribute('focusgroupstart', active);
+        if (!hasNativeFocusGroup) {
+          tab.tabIndex = active ? 0 : -1;
+        }
+      }
+
+      for (const panel of panels) {
+        const active = panel.dataset.panel === normalized;
+        if (active) {
+          panel.hidden = false;
+          panel.tabIndex = 0;
+        } else {
+          // Cast supports modern hidden="until-found" while older browsers treat string truthy as hidden.
+          (panel as unknown as { hidden: boolean | string }).hidden = 'until-found';
+          panel.removeAttribute('tabindex');
+        }
+      }
+
+      targetTab.scrollIntoView({
+        block: 'nearest',
+        inline: 'nearest',
+        container: 'nearest',
+      } as ScrollIntoViewOptions);
+
+      if (focusTab) targetTab.focus();
+      debugLog('tab:select', normalized);
+    };
+
+    // Initialize roving tabindex only when native focusgroup is unsupported.
+    if (!hasNativeFocusGroup) {
+      tabs.forEach((tab) => {
+        tab.tabIndex = tab.getAttribute('aria-selected') === 'true' ? 0 : -1;
+      });
+    }
+
+    tablist.addEventListener('click', (e) => {
+      const tab = (e.target as Element | null)?.closest<HTMLButtonElement>('[role="tab"]');
+      if (tab?.dataset.tab) selectTab(tab.dataset.tab, false);
+    });
+
+    // Selection follows focus so native focusgroup arrow navigation activates the panel immediately.
+    tablist.addEventListener('focusin', (e) => {
+      const tab = (e.target as Element | null)?.closest<HTMLButtonElement>('[role="tab"]');
+      if (tab?.dataset.tab && tab.getAttribute('aria-selected') !== 'true') {
+        selectTab(tab.dataset.tab, false);
+      }
+    });
+
+    if (!hasNativeFocusGroup) {
+      tablist.addEventListener('keydown', (e) => {
+        const current = (e.target as Element | null)?.closest<HTMLButtonElement>('[role="tab"]');
+        if (!current) return;
+        const idx = tabs.indexOf(current);
+        if (idx === -1) return;
+
+        let nextIdx = -1;
+        if (e.key === 'ArrowRight') nextIdx = (idx + 1) % tabs.length;
+        else if (e.key === 'ArrowLeft') nextIdx = (idx - 1 + tabs.length) % tabs.length;
+        else if (e.key === 'Home') nextIdx = 0;
+        else if (e.key === 'End') nextIdx = tabs.length - 1;
+
+        if (nextIdx !== -1 && tabs[nextIdx]?.dataset.tab) {
+          e.preventDefault();
+          selectTab(tabs[nextIdx].dataset.tab!, true);
+        }
+      });
+    }
+
+    // Sync active tab if browser Find-in-Page opens a hidden="until-found" panel.
+    for (const panel of panels) {
+      panel.addEventListener('beforematch', () => {
+        if (panel.dataset.panel) selectTab(panel.dataset.panel, false);
+      });
+    }
+
+    // Lore Mode toggle synced to html[data-lore="1"|"0"] + localStorage.
+    if (loreToggle) {
+      const LORE_KEY = 'hw.lore';
+      const setLore = (on: boolean) => {
+        document.documentElement.setAttribute('data-lore', on ? '1' : '0');
+      };
+      const saved = localStorage.getItem(LORE_KEY);
+      if (saved !== null) loreToggle.checked = saved === '1';
+      setLore(loreToggle.checked);
+      loreToggle.addEventListener('change', () => {
+        setLore(loreToggle.checked);
+        localStorage.setItem(LORE_KEY, loreToggle.checked ? '1' : '0');
+      });
+    }
+
+    // Trophy Armory sub-filters.
+    if (filterGroup && trophyGrid) {
+      const filterBtns = Array.from(filterGroup.querySelectorAll<HTMLButtonElement>('.dossier-filter-btn'));
+      const cards = Array.from(trophyGrid.querySelectorAll<HTMLElement>('.pokemon-card'));
+
+      const applyTrophyFilter = (filter: string) => {
+        for (const btn of filterBtns) {
+          btn.setAttribute('aria-pressed', String(btn.dataset.filter === filter));
+        }
+        for (const card of cards) {
+          let show = false;
+          if (filter === 'all') show = true;
+          else if (filter === 'earned') show = card.dataset.earned === 'true';
+          else if (filter === 'pending') show = card.dataset.pending === 'true';
+          else if (filter === 'ultimate') show = card.dataset.tier === 'ultimate';
+          else if (filter === 'locked') show = card.dataset.mystery === 'true';
+          card.style.display = show ? 'flex' : 'none';
+        }
+        debugLog('trophies:filter', filter);
+      };
+
+      filterGroup.addEventListener('click', (e) => {
+        const btn = (e.target as Element | null)?.closest<HTMLButtonElement>('.dossier-filter-btn');
+        if (btn?.dataset.filter) applyTrophyFilter(btn.dataset.filter);
+      });
+    }
+
+    // Trophy card click/inspect inline detail strip inside Trophy Armory.
+    trophyGrid?.addEventListener('click', (e) => {
+      const card = (e.target as Element | null)?.closest<HTMLElement>('.pokemon-card');
+      if (!card || !inspector || !inspectorTitle || !inspectorBody) return;
+      inspectorTitle.textContent = card.dataset.name ?? 'Trophy Card';
+      const quote = card.dataset.tooltip ? ` "${card.dataset.tooltip}"` : '';
+      const lore = card.dataset.lore ? ` Lore: ${card.dataset.lore}` : '';
+      inspectorBody.textContent = `${card.dataset.caption ?? ''}${quote}${lore}`;
+      inspector.hidden = false;
+    });
+
+    // Badge image fallback shield reveal without inline error attributes.
+    dialog.querySelectorAll<HTMLImageElement>('img[data-badge-img]').forEach((img) => {
+      const showShield = () => {
+        img.hidden = true;
+        const shield = img.nextElementSibling as HTMLElement | null;
+        if (shield) shield.hidden = false;
+      };
+      img.addEventListener('error', showShield);
+      if (img.complete && img.naturalWidth === 0) showShield();
+    });
+
+    // Handle Camp David Field Compass '#' link cleanly inside dialog without scrolling.
+    dialog.querySelectorAll<HTMLAnchorElement>('[data-compass-link="true"]').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        if (relicStatus) {
+          relicStatus.textContent =
+            'Camp David Field Compass active: grounded field direction logged in Biome 3.';
+          relicStatus.hidden = false;
+        }
+      });
+    });
+
+    // Progressive enhancement outside light-dismiss fallback when !('closedBy' in HTMLDialogElement.prototype).
+    if (!('closedBy' in HTMLDialogElement.prototype)) {
+      const outside = (e: PointerEvent, dlg: HTMLDialogElement) => {
+        const r = dlg.getBoundingClientRect();
+        return e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom;
+      };
+      let pressedOutside = false;
+      dialog.addEventListener('pointerdown', (e) => {
+        pressedOutside = dialog.open && outside(e, dialog);
+      });
+      dialog.addEventListener('pointerup', (e) => {
+        if (pressedOutside && dialog.open && outside(e, dialog)) {
+          dialog.close('backdrop');
+        }
+        pressedOutside = false;
+      });
+    }
+
+    // Reset returnValue on close so stale button values never leak across opens,
+    // and notify OverworldController via hw:dossier-close to return from CHARACTER_SHEET.
+    dialog.addEventListener('close', () => {
+      const reason = dialog.returnValue || 'dismiss';
+      dialog.returnValue = '';
+      document.dispatchEvent(
+        new CustomEvent('hw:dossier-close', {
+          bubbles: true,
+          detail: { reason },
+        })
+      );
+      debugLog('dialog:close', { reason });
+    });
+
+    closeBtn?.addEventListener('click', () => {
+      if (dialog.open) dialog.close('close-x');
+    });
+    footerCloseBtn?.addEventListener('click', () => {
+      if (dialog.open) dialog.close('resume');
+    });
+
+    // Honor [C] close shortcut documented in footer hint while preventing keydown
+    // from bubbling to window where overworld-engine would immediately re-open the modal.
+    dialog.addEventListener('keydown', (e) => {
+      if (!dialog.open) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      const target = e.target as Element | null;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          (target as HTMLElement).isContentEditable)
+      ) {
+        return;
+      }
+      if (e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        e.stopPropagation();
+        close();
+      }
+    });
+
+    const open = (tabId?: string) => {
+      if (tabId) {
+        selectTab(tabId, false);
+      }
+      if (!dialog.open) {
+        dialog.showModal();
+      }
+      if (tabId) {
+        const activeTab = tabs.find((t) => t.getAttribute('aria-selected') === 'true');
+        activeTab?.focus();
+      }
+      debugLog('dialog:open', { tabId: tabId ?? 'status' });
+    };
+
+    const close = () => {
+      if (dialog.open) {
+        dialog.close('api');
+      }
+    };
+
+    win.CharacterDossierTerminal = {
+      open,
+      close,
+      selectTab: (tabId: string) => selectTab(tabId, false),
+    };
+  })();
+</script>
