@@ -1,47 +1,52 @@
 ---
-/* Timeline.astro — MD3 Surface & Responsive Vector Timeline */
+/*
+ * Path: src/components/Timeline.astro
+ * Purpose: Zone 2 (Hall of Eras) rendering the 5-Age progression timeline
+ *          (Stone, Steel, Crystal, Graphene, Sovereign Age) with #eras + #timeline anchors.
+ * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ */
 const eras = [
   {
     id: 'era1',
     svgIcon: 'terminal',
-    title: 'Stone Age — App Apprentice',
-    years: '2010–2013',
+    title: 'Stone Age: App Apprentice',
+    years: '2010 - 2013',
     note: 'Foundations of IT, corporate infrastructure, and design systems.',
-    burn: 'Corporate collapse & skill reset.',
+    burn: 'Corporate collapse and skill reset.',
     color: '#8dafc2'
   },
   {
     id: 'era2',
     svgIcon: 'shield',
-    title: 'Steel Age — Hero Reborn',
-    years: '2014–2018',
-    note: 'Agency scale; high-ticket US client delivery & full-stack systems.',
-    burn: 'Burnout from one‑man‑band overload.',
+    title: 'Steel Age: Hero Reborn',
+    years: '2014 - 2018',
+    note: 'Agency scale, high-ticket US client delivery, and full-stack systems.',
+    burn: 'Burnout from one-person overload.',
     color: '#38C7E7'
   },
   {
     id: 'era3',
     svgIcon: 'compass',
-    title: 'Crystal Age — Wandering Nomad',
-    years: '2019–2022',
-    note: 'LATAM remote infrastructure & international consulting.',
-    burn: 'Personal & relationship implosion.',
+    title: 'Crystal Age: Wandering Nomad',
+    years: '2019 - 2022',
+    note: 'LATAM remote infrastructure and international consulting.',
+    burn: 'Personal and relationship implosion.',
     color: '#a78bfa'
   },
   {
     id: 'era4',
     svgIcon: 'chip',
-    title: 'Graphene Age — Siege & AI Systems',
-    years: '2023–2025',
-    note: 'Autonomous AI multi-agent pipelines & generative media workflows.',
+    title: 'Graphene Age: Siege & AI Systems',
+    years: '2023 - 2025',
+    note: 'Autonomous multi-agent pipelines and generative media workflows.',
     burn: 'Siege Mode proficiency unlocked.',
     color: '#ffd166'
   },
   {
     id: 'era5',
     svgIcon: 'citadel',
-    title: 'Sovereign Age — Sanctuary & Fleet Ops',
-    years: '2026–Present',
+    title: 'Sovereign Age: Sanctuary & Fleet Ops',
+    years: '2026 - Present',
     note: 'Embodied edge intelligence (RASS), KidsLab 3.0, and El Salvador sanctuary.',
     burn: 'Closing the 365-day loop from Colombia.',
     color: '#06d6a0'
@@ -49,17 +54,17 @@ const eras = [
 ];
 ---
 
-<section id="timeline" class="section">
-  <div class="inner">
-    <div class="banner">Hero Journey Timeline</div>
+<section id="eras" data-zone="eras" class="section zone-section">
+  <div id="timeline" class="inner">
+    <h2 class="banner">Hall of Eras</h2>
 
     <div class="panel md3-timeline-panel" style="margin-top:12px">
       <!-- Glow rail -->
       <div class="journey-rail" aria-hidden="true"></div>
 
       <!-- Scroller Navigation Buttons -->
-      <button class="tl-btn tl-left" aria-label="Scroll timeline left">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+      <button type="button" class="tl-btn tl-left" aria-label="Scroll timeline left">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <polyline points="15 18 9 12 15 6"></polyline>
         </svg>
       </button>
@@ -71,13 +76,13 @@ const eras = [
             <article
               class="node"
               data-title={e.title}
-              data-html={`<p><strong>${e.years}</strong> — ${e.note}</p><p class="burn">Burn: ${e.burn}</p>`}
+              data-html={`<p><strong>${e.years}</strong>: ${e.note}</p><p class="burn">Burn: ${e.burn}</p>`}
             >
-              <div class="pin" style={`--pin-color: ${e.color}; --i:${i}`}></div>
-              <div class="card md3-era-card">
+              <div class="pin" style={`--pin-color: ${e.color}; --i:${i}`} aria-hidden="true"></div>
+              <button type="button" class="card md3-era-card era-trigger">
                 <div class="head">
-                  <!-- Inline Reliable Vector Era Icons -->
-                  <div class="era-icon-badge" style={`color: ${e.color}; border-color: ${e.color}40; background: ${e.color}15;`}>
+                  <!-- Inline Vector Era Icons -->
+                  <div class="era-icon-badge" style={`color: ${e.color}; border-color: ${e.color}40; background: ${e.color}15;`} aria-hidden="true">
                     {e.svgIcon === 'terminal' && (
                       <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2">
                         <rect x="2" y="4" width="20" height="16" rx="2"></rect>
@@ -118,14 +123,14 @@ const eras = [
                 <div class="burn">
                   <span class="burn-label">BURN:</span> {e.burn}
                 </div>
-              </div>
+              </button>
             </article>
           ))}
         </div>
       </div>
 
-      <button class="tl-btn tl-right" aria-label="Scroll timeline right">
-        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5">
+      <button type="button" class="tl-btn tl-right" aria-label="Scroll timeline right">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
           <polyline points="9 18 15 12 9 6"></polyline>
         </svg>
       </button>
@@ -168,7 +173,6 @@ const eras = [
       max-width: 350px;
       position: relative;
       scroll-snap-align: start;
-      cursor: pointer;
     }
     .node .pin {
       position: absolute;
@@ -182,6 +186,14 @@ const eras = [
       box-shadow: 0 0 12px var(--pin-color, #38C7E7);
       z-index: 2;
     }
+    .era-trigger {
+      display: block;
+      width: calc(100% - 20px);
+      text-align: left;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+    }
     .md3-era-card {
       margin-top: 14px;
       margin-left: 20px;
@@ -192,7 +204,8 @@ const eras = [
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
       transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     }
-    .node:hover .md3-era-card {
+    .node:hover .md3-era-card,
+    .era-trigger:focus-visible {
       transform: translateY(-4px);
       border-color: rgba(56, 199, 231, 0.7);
       background: rgba(28, 59, 84, 0.65);
@@ -222,6 +235,7 @@ const eras = [
       font-family: 'Press Start 2P', monospace;
       font-size: 9px;
       letter-spacing: 0.5px;
+      font-variant-numeric: tabular-nums;
     }
     .era-title {
       margin: 0;
@@ -241,7 +255,7 @@ const eras = [
       color: #ffb4b4;
       line-height: 1.4;
       background: rgba(193, 46, 40, 0.15);
-      border-left: 2px solid #ff7570;
+      border-left: 1px solid #ff7570;
       padding: 4px 8px;
       border-radius: 0 4px 4px 0;
     }
@@ -257,8 +271,8 @@ const eras = [
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      width: 36px;
-      height: 36px;
+      width: 44px;
+      height: 44px;
       display: grid;
       place-items: center;
       border: 1px solid rgba(56, 199, 231, 0.4);
@@ -286,12 +300,16 @@ const eras = [
       .tl-btn { display: none; }
       .md3-timeline-panel { padding-left: 14px; padding-right: 14px; }
     }
+    @media (max-width: 900px) {
+      .node { min-width: 260px; max-width: 84%; }
+    }
   </style>
 
   <script is:inline>
-    // Click node to open modal
-    document.querySelector('#timeline')?.addEventListener('click', (ev) => {
-      const node = ev.target.closest('.node');
+    // Click era trigger to open native dialog modal
+    document.querySelector('#eras')?.addEventListener('click', (ev) => {
+      const trigger = ev.target.closest('.era-trigger');
+      const node = trigger?.closest('.node');
       if (!node) return;
       window.HeroWallModal?.open?.({
         title: node.dataset.title || 'Era',
@@ -299,15 +317,16 @@ const eras = [
       });
     });
 
-    // Scroller belt control
+    // Scroller belt control respecting reduced-motion preferences
     (function () {
-      const wrap = document.querySelector('#timeline .md3-timeline-panel');
+      const wrap = document.querySelector('#eras .md3-timeline-panel');
       const scroller = wrap?.querySelector('#timelineScroller');
       const leftBtn = wrap?.querySelector('.tl-left');
       const rightBtn = wrap?.querySelector('.tl-right');
       if (!wrap || !scroller || !leftBtn || !rightBtn) return;
 
       const STEP = () => Math.min(380, Math.round(scroller.clientWidth * 0.7));
+      const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
       function updateButtons() {
         const max = scroller.scrollWidth - scroller.clientWidth - 1;
@@ -315,7 +334,7 @@ const eras = [
         rightBtn.disabled = scroller.scrollLeft >= max;
       }
       function nudge(dir) {
-        scroller.scrollBy({ left: dir * STEP(), behavior: 'smooth' });
+        scroller.scrollBy({ left: dir * STEP(), behavior: reduceMotion() ? 'auto' : 'smooth' });
         setTimeout(updateButtons, 420);
       }
 

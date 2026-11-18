@@ -1,26 +1,49 @@
 ---
+/*
+ * Path: src/components/About.astro
+ * Purpose: Zone 1 (Sanctuary Citadel) rendering Boris Quijano Level 39 dossier,
+ *          Sovereign Abstract, memorial tribute to Emy, Kiba, and Yue, RPG stats matrix,
+ *          and 13-item Loadout Belt while preserving the legacy #about anchor.
+ * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ */
 import data from "../data/hero.json";
 
-const hero = data?.hero ?? {
+const rawHero = data?.hero ?? {
   name: "Boris",
   title: "LATAM AI Sherpa",
   level: 39,
   protocol: "RASS v39.1.3",
-  category: "Explorer–Builder–Teacher"
+  category: "Explorer / Builder / Teacher"
 };
-const abstract = data?.abstract ?? "";
+
+const DASH_CHARS = new RegExp(`\\s*[${String.fromCharCode(0x2014, 0x2013)}]\\s*`, "g");
+const NB_HYPHEN = new RegExp(String.fromCharCode(0x2011), "g");
+
+const sanitizeText = (value: unknown): string =>
+  String(value ?? "")
+    .replace(DASH_CHARS, ", ")
+    .replace(NB_HYPHEN, "-")
+    .trim();
+
+const hero = {
+  ...rawHero,
+  category: String(rawHero.category ?? "Explorer / Builder / Teacher")
+    .replace(DASH_CHARS, " / ")
+};
+
+const abstract = sanitizeText(data?.abstract ?? "");
 ---
 
-<section id="about" class="section">
-  <div class="inner">
-    <div class="banner">Character Profile</div>
+<section id="sanctuary" data-zone="sanctuary" class="section zone-section">
+  <div id="about" class="inner">
+    <h2 class="banner">Sanctuary Citadel</h2>
 
     <div class="panel md3-profile-card" style="margin-top:12px">
       <!-- Top Hero Header Bar -->
       <div class="profile-header">
         <div class="holo-avatar-wrap">
           <div class="holo-avatar">
-            <img src="/img/boris-portrait.png" alt="Boris hologram portrait" loading="lazy" />
+            <img src="/img/boris-portrait.png" alt="Boris Quijano hologram portrait" loading="lazy" />
             <div class="scanlines" aria-hidden="true"></div>
           </div>
           <div class="level-badge" data-tip="Current Level">
@@ -31,12 +54,12 @@ const abstract = data?.abstract ?? "";
 
         <div class="profile-title-block">
           <div class="profile-badges-row">
-            <span class="md3-badge-pill protocol"><iconify-icon icon="pixelarticons:zap"></iconify-icon> {hero.protocol}</span>
-            <span class="md3-badge-pill category"><iconify-icon icon="pixelarticons:flag"></iconify-icon> {hero.category}</span>
-            <span class="md3-badge-pill sanctuary"><iconify-icon icon="pixelarticons:home"></iconify-icon> El Salvador</span>
+            <span class="md3-badge-pill protocol"><iconify-icon icon="pixelarticons:zap" aria-hidden="true"></iconify-icon> {hero.protocol}</span>
+            <span class="md3-badge-pill category"><iconify-icon icon="pixelarticons:flag" aria-hidden="true"></iconify-icon> {hero.category}</span>
+            <span class="md3-badge-pill sanctuary"><iconify-icon icon="pixelarticons:home" aria-hidden="true"></iconify-icon> El Salvador</span>
           </div>
-          <h2 class="profile-name">Boris Quijano</h2>
-          <div class="profile-subtitle">LATAM AI Sherpa — Digital Strategist &amp; Narrative Architect</div>
+          <h3 class="profile-name">Boris Quijano</h3>
+          <div class="profile-subtitle">LATAM AI Sherpa, Digital Strategist, and Narrative Architect</div>
         </div>
       </div>
 
@@ -44,18 +67,34 @@ const abstract = data?.abstract ?? "";
       {abstract && (
         <div class="abstract-quote-box">
           <div class="quote-header">
-            <iconify-icon icon="pixelarticons:script"></iconify-icon>
+            <iconify-icon icon="pixelarticons:script" aria-hidden="true"></iconify-icon>
             <span>SOVEREIGN COMPASS &amp; ABSTRACT</span>
           </div>
           <p class="quote-text">{abstract}</p>
         </div>
       )}
 
+      <!-- Dedicated Tribute to Memorial Companions: Emy, Kiba, and Yue -->
+      <aside class="memorial-tribute-box" aria-label="Memorial tribute to Emy, Kiba, and Yue">
+        <div class="memorial-tribute-text">
+          <div class="memorial-header">
+            <iconify-icon icon="pixelarticons:heart" aria-hidden="true"></iconify-icon>
+            <h3>Memorial Companions: Emy, Kiba, and Yue</h3>
+          </div>
+          <p>
+            On the overworld road, a white pixel dog trots beside Boris in memory of Emy, Kiba, and Yue. They walked through an earlier chapter in Medellin and stayed part of the story after the move back to El Salvador.
+          </p>
+        </div>
+        <button type="button" class="btn secondary tribute-btn" data-open-memorial>
+          Honor Emy, Kiba &amp; Yue (B)
+        </button>
+      </aside>
+
       <!-- RPG Stats Matrix -->
       <div class="charcard-v2">
         <div class="cc-stats-grid">
           <div class="stat-cell">
-            <span class="iconify" data-icon="game-icons:crown"></span>
+            <span class="iconify" data-icon="game-icons:crown" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Class</span>
               <span class="stat-value">Narrative Architect</span>
@@ -63,7 +102,7 @@ const abstract = data?.abstract ?? "";
           </div>
 
           <div class="stat-cell">
-            <span class="iconify" data-icon="mdi:robot-happy-outline"></span>
+            <span class="iconify" data-icon="mdi:robot-happy-outline" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Spec</span>
               <span class="stat-value">Technomancy (AI + Systems)</span>
@@ -71,7 +110,7 @@ const abstract = data?.abstract ?? "";
           </div>
 
           <div class="stat-cell">
-            <span class="iconify" data-icon="mdi:handshake-outline"></span>
+            <span class="iconify" data-icon="mdi:handshake-outline" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Alignment</span>
               <span class="stat-value">Chaotic Good</span>
@@ -79,7 +118,7 @@ const abstract = data?.abstract ?? "";
           </div>
 
           <div class="stat-cell">
-            <span class="iconify" data-icon="mdi:atom-variant"></span>
+            <span class="iconify" data-icon="mdi:atom-variant" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Era</span>
               <span class="stat-value">Sovereign Age (4th Life)</span>
@@ -87,15 +126,15 @@ const abstract = data?.abstract ?? "";
           </div>
 
           <div class="stat-cell">
-            <span class="iconify" data-icon="game-icons:upgrade"></span>
+            <span class="iconify" data-icon="game-icons:upgrade" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Experience</span>
-              <span class="stat-value">15+ years — IT, Marketing, AI Fleet</span>
+              <span class="stat-value">15+ years across IT, Marketing, and AI Systems</span>
             </div>
           </div>
 
           <div class="stat-cell">
-            <span class="iconify" data-icon="mdi:translate-variant"></span>
+            <span class="iconify" data-icon="mdi:translate-variant" aria-hidden="true"></span>
             <div class="stat-meta">
               <span class="stat-label">Language</span>
               <span class="stat-value">EN / ES (Bicultural US &amp; LATAM)</span>
@@ -106,45 +145,46 @@ const abstract = data?.abstract ?? "";
         <!-- Tech Loadout Belt -->
         <div class="loadout-wrap-v2">
           <div class="loadout-label-bar">
-            <iconify-icon icon="pixelarticons:briefcase"></iconify-icon>
+            <iconify-icon icon="pixelarticons:briefcase" aria-hidden="true"></iconify-icon>
             <span>EQUIPPED LOADOUT &amp; TECH STACK</span>
           </div>
 
           <div class="loadout-belt">
             <div class="loadout-bar" id="loadoutBar">
-              <span class="loadout-chip" data-tip="Design Systems"><span class="iconify" data-icon="simple-icons:figma"></span>Figma</span>
-              <span class="loadout-chip" data-tip="Docs & Ops"><span class="iconify" data-icon="simple-icons:notion"></span>Notion</span>
-              <span class="loadout-chip" data-tip="Backend Runtime"><span class="iconify" data-icon="mdi:nodejs"></span>Node</span>
-              <span class="loadout-chip" data-tip="Fast Runtime & Bundler"><span class="iconify" data-icon="simple-icons:bun"></span>Bun</span>
-              <span class="loadout-chip" data-tip="Rapid UI"><span class="iconify" data-icon="mdi:tailwind"></span>Tailwind</span>
-              <span class="loadout-chip" data-tip="No-Code Automations"><span class="iconify" data-icon="simple-icons:zap"></span>Zapier</span>
-              <span class="loadout-chip" data-tip="API Workflows"><span class="iconify" data-icon="mdi:pipe-disconnected"></span>Pipedream</span>
-              <span class="loadout-chip" data-tip="Islands & Speed"><span class="iconify" data-icon="simple-icons:astro"></span>Astro</span>
-              <span class="loadout-chip" data-tip="Edge Deploys"><span class="iconify" data-icon="simple-icons:vercel"></span>Vercel</span>
-              <span class="loadout-chip" data-tip="CDN & Security"><span class="iconify" data-icon="simple-icons:cloudflare"></span>Cloudflare</span>
-              <span class="loadout-chip" data-tip="Edge AI Models"><span class="iconify" data-icon="simple-icons:google"></span>Gemini</span>
-              <span class="loadout-chip" data-tip="Text→Video"><span class="iconify" data-icon="mdi:movie-open-outline"></span>Sora</span>
-              <span class="loadout-chip" data-tip="Image Gen"><span class="iconify" data-icon="mdi:image-auto-adjust"></span>Genspark</span>
-              <span class="loadout-chip rare" id="chipChatGPT" data-tip="Fear is for NPCs — Level 13 unlocked.">
-                <span class="iconify" data-icon="mdi:chat-processing-outline"></span>ChatGPT
-              </span>
-            </div>
-
-            <div class="loadout-nav" aria-hidden="true">
-              <button class="nav-btn left" id="loadoutPrev" aria-label="Scroll loadout left">
-                <span class="iconify" data-icon="mdi:chevron-left"></span>
-              </button>
-              <button class="nav-btn right" id="loadoutNext" aria-label="Scroll loadout right">
-                <span class="iconify" data-icon="mdi:chevron-right"></span>
+              <span class="loadout-chip" data-tip="Design Systems"><span class="iconify" data-icon="simple-icons:figma" aria-hidden="true"></span>Figma</span>
+              <span class="loadout-chip" data-tip="Docs & Ops"><span class="iconify" data-icon="simple-icons:notion" aria-hidden="true"></span>Notion</span>
+              <span class="loadout-chip" data-tip="Backend Runtime"><span class="iconify" data-icon="mdi:nodejs" aria-hidden="true"></span>Node</span>
+              <span class="loadout-chip" data-tip="Fast Runtime & Bundler"><span class="iconify" data-icon="simple-icons:bun" aria-hidden="true"></span>Bun</span>
+              <span class="loadout-chip" data-tip="Rapid UI"><span class="iconify" data-icon="mdi:tailwind" aria-hidden="true"></span>Tailwind</span>
+              <span class="loadout-chip" data-tip="No-Code Automations"><span class="iconify" data-icon="simple-icons:zap" aria-hidden="true"></span>Zapier</span>
+              <span class="loadout-chip" data-tip="API Workflows"><span class="iconify" data-icon="mdi:pipe-disconnected" aria-hidden="true"></span>Pipedream</span>
+              <span class="loadout-chip" data-tip="Islands & Speed"><span class="iconify" data-icon="simple-icons:astro" aria-hidden="true"></span>Astro</span>
+              <span class="loadout-chip" data-tip="Edge Deploys"><span class="iconify" data-icon="simple-icons:vercel" aria-hidden="true"></span>Vercel</span>
+              <span class="loadout-chip" data-tip="CDN & Security"><span class="iconify" data-icon="simple-icons:cloudflare" aria-hidden="true"></span>Cloudflare</span>
+              <span class="loadout-chip" data-tip="Edge AI Models"><span class="iconify" data-icon="simple-icons:google" aria-hidden="true"></span>Gemini</span>
+              <span class="loadout-chip" data-tip="Text to Video"><span class="iconify" data-icon="mdi:movie-open-outline" aria-hidden="true"></span>Sora</span>
+              <span class="loadout-chip" data-tip="Image Gen"><span class="iconify" data-icon="mdi:image-auto-adjust" aria-hidden="true"></span>Genspark</span>
+              <button type="button" class="loadout-chip rare" id="chipChatGPT" data-tip="Fear is for NPCs. Level 13 unlocked.">
+                <span class="iconify" data-icon="mdi:chat-processing-outline" aria-hidden="true"></span>ChatGPT
               </button>
             </div>
 
-            <div class="fade left"></div>
-            <div class="fade right"></div>
+            <!-- Keep nav wrapper exposed in accessibility tree because its buttons receive focus -->
+            <div class="loadout-nav">
+              <button type="button" class="nav-btn left" id="loadoutPrev" aria-label="Scroll loadout left">
+                <span class="iconify" data-icon="mdi:chevron-left" aria-hidden="true"></span>
+              </button>
+              <button type="button" class="nav-btn right" id="loadoutNext" aria-label="Scroll loadout right">
+                <span class="iconify" data-icon="mdi:chevron-right" aria-hidden="true"></span>
+              </button>
+            </div>
+
+            <div class="fade left" aria-hidden="true"></div>
+            <div class="fade right" aria-hidden="true"></div>
           </div>
 
           <div id="loadoutEaster" class="easter-msg">
-            <span class="hint">Hint:</span> hover the last chip for a surprise…
+            <span class="hint">Hint:</span> hover or activate the last chip for a surprise...
           </div>
         </div>
       </div>
@@ -249,10 +289,10 @@ const abstract = data?.abstract ?? "";
 
     .abstract-quote-box {
       margin-top: 14px;
-      margin-bottom: 20px;
+      margin-bottom: 18px;
       padding: 14px 18px;
       background: rgba(56, 199, 231, 0.06);
-      border-left: 4px solid #38C7E7;
+      border-left: 1px solid #38C7E7;
       border-radius: 0 8px 8px 0;
     }
     .quote-header {
@@ -268,9 +308,55 @@ const abstract = data?.abstract ?? "";
     .quote-text {
       margin: 0;
       color: #e9f7ff;
-      font-size: 13.5px;
+      font-size: 14px;
       line-height: 1.55;
       font-style: italic;
+    }
+
+    .memorial-tribute-box {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-bottom: 20px;
+      padding: 14px 16px;
+      background: rgba(244, 227, 195, 0.07);
+      border: 1px solid rgba(244, 227, 195, 0.35);
+      border-radius: 10px;
+    }
+    .memorial-tribute-text {
+      flex: 1 1 280px;
+      min-width: 0;
+    }
+    .memorial-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #F4E3C3;
+      margin-bottom: 6px;
+    }
+    .memorial-header h3 {
+      margin: 0;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 11px;
+      line-height: 1.4;
+      color: #F4E3C3;
+    }
+    .memorial-tribute-text p {
+      margin: 0;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: #e9dfd0;
+    }
+    .tribute-btn {
+      font-size: 10px;
+      padding: 10px 14px;
+      border-color: #F4E3C3;
+      color: #F4E3C3;
+      white-space: normal;
+      text-align: center;
+      max-width: 100%;
     }
 
     .cc-stats-grid {
@@ -327,6 +413,9 @@ const abstract = data?.abstract ?? "";
       color: #ffd166;
       margin-bottom: 10px;
     }
+    button.loadout-chip {
+      cursor: pointer;
+    }
 
     @media (max-width: 768px) {
       .profile-header {
@@ -344,17 +433,17 @@ const abstract = data?.abstract ?? "";
   </style>
 
   <script>
-    // Easter egg (long hover or click)
+    // Easter egg (long hover or click on Level 13 rare chip)
     const chip = document.getElementById('chipChatGPT');
     const msg  = document.getElementById('loadoutEaster');
-    let t;
+    let hoverTimer;
     const LINES = [
-      "RASS is watching you… calculating curiosity score.",
-      "Ms. Devil will punish you for being too curious… proceed.",
+      "RASS is watching you. Calculating curiosity score.",
+      "Ms. Devil will punish you for being too curious. Proceed.",
       "Siege Mode: curiosity detected. Bonus XP awarded.",
       "You found Level 13. Most mortals stop at 12."
     ];
-    const randLine = () => LINES[Math.floor(Math.random()*LINES.length)];
+    const randLine = () => LINES[Math.floor(Math.random() * LINES.length)];
     function openEgg(){
       msg?.classList.add('show');
       if (window.HeroWallModal && window.HeroWallModal.open) {
@@ -362,18 +451,19 @@ const abstract = data?.abstract ?? "";
           title: "Secret Loadout: Level 13",
           html: `<p>${randLine()}</p>`
         });
-      } else {
-        if(msg) msg.innerHTML = `<span class="hint">Secret:</span> ${randLine()}`;
+      } else if (msg) {
+        msg.innerHTML = `<span class="hint">Secret:</span> ${randLine()}`;
       }
     }
-    chip?.addEventListener('mouseenter', () => { t = setTimeout(openEgg, 1200); });
-    chip?.addEventListener('mouseleave', () => { clearTimeout(t); });
+    chip?.addEventListener('mouseenter', () => { hoverTimer = setTimeout(openEgg, 1200); });
+    chip?.addEventListener('mouseleave', () => { clearTimeout(hoverTimer); });
     chip?.addEventListener('click', openEgg);
 
-    // Loadout belt scrolling controls
+    // Loadout belt horizontal scroll controls (respecting reduced-motion preference)
     const bar = document.getElementById('loadoutBar');
     const prev = document.getElementById('loadoutPrev');
     const next = document.getElementById('loadoutNext');
+    const reduceMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
     function updateNav() {
       if (!bar) return;
@@ -384,12 +474,12 @@ const abstract = data?.abstract ?? "";
     function scrollBelt(direction) {
       if (!bar) return;
       const step = bar.clientWidth * 0.6;
-      bar.scrollBy({ left: direction * step, behavior: 'smooth' });
+      bar.scrollBy({ left: direction * step, behavior: reduceMotion() ? 'auto' : 'smooth' });
       setTimeout(updateNav, 420);
     }
     prev?.addEventListener('click', () => scrollBelt(-1));
     next?.addEventListener('click', () => scrollBelt(1));
-    bar?.addEventListener('scroll', updateNav);
+    bar?.addEventListener('scroll', updateNav, { passive: true });
     window.addEventListener('load', updateNav);
   </script>
 </section>

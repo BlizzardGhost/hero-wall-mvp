@@ -12,6 +12,7 @@
     "astro": "^5.12.9"
   },
   "dependencies": {
-    "openai": "^7.45.1"
+    "openai": "^7.45.1",
+    "pixi.js": "^8.23.0"
   }
 }

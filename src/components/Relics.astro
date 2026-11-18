@@ -1,18 +1,48 @@
 ---
+/*
+ * Path: src/components/Relics.astro
+ * Purpose: Zone 3 (Relic Vault) displaying KidsLab 3.0, Infusio, and Camp David
+ *          with pixel SVG crest fallback and #relics / #work anchor support.
+ * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ */
 import { relics } from '../data/relics';
 ---
 
-<section id="work" class="section">
-  <div class="inner">
-    <div class="banner">Featured Relics &amp; Work</div>
-    <p class="relic-lede">Every quest brings a relic — production systems shipped to the world.</p>
+<section id="relics" data-zone="relics" class="section zone-section">
+  <div id="work" class="inner">
+    <h2 class="banner">Relic Vault</h2>
+    <p class="relic-lede">Every quest leaves a relic. These systems went from field notebooks into production.</p>
 
     <div class="panel md3-work-panel">
       <div class="relics-grid-v2">
         {relics.map((r) => (
           <article class="relic-card-v2">
             <div class="relic-holo-frame">
-              <img src={r.img} alt={`${r.title} preview`} loading="lazy" />
+              {r.img ? (
+                <>
+                  <img src={r.img} alt={`${r.title} preview`} loading="lazy" data-relic-img />
+                  <div class="relic-pixel-crest" hidden aria-hidden="true">
+                    <svg viewBox="0 0 64 64" width="76" height="76">
+                      <rect width="64" height="64" fill="#0d1a26" />
+                      <path d="M12 48 L32 14 L52 48 Z" fill="#1C3B54" stroke="#38C7E7" stroke-width="2" />
+                      <rect x="28" y="34" width="8" height="14" fill="#FFD166" />
+                    </svg>
+                  </div>
+                </>
+              ) : (
+                <div class="relic-pixel-crest" role="img" aria-label={`${r.title} 16-bit sanctuary crest`}>
+                  <svg viewBox="0 0 96 64" width="168" height="112" aria-hidden="true">
+                    <rect width="96" height="64" fill="#0b1824" />
+                    <rect x="0" y="46" width="96" height="18" fill="#132a3d" />
+                    <polygon points="10,46 30,16 50,46" fill="#1C3B54" stroke="#38C7E7" stroke-width="2" />
+                    <polygon points="44,46 66,20 88,46" fill="#163248" stroke="#06D6A0" stroke-width="2" />
+                    <rect x="44" y="38" width="8" height="8" fill="#C12E28" />
+                    <rect x="45" y="32" width="6" height="6" fill="#FFD166" />
+                    <rect x="16" y="10" width="4" height="4" fill="#F4E3C3" />
+                    <rect x="74" y="12" width="4" height="4" fill="#FFD166" />
+                  </svg>
+                </div>
+              )}
               <div class="relic-scanlines" aria-hidden="true"></div>
             </div>
 
@@ -31,7 +61,7 @@ import { relics } from '../data/relics';
                 <div class="relic-action">
                   <a class="btn secondary relic-btn" href={r.href} target="_blank" rel="noopener noreferrer">
                     <span>Inspect Relic</span>
-                    <iconify-icon icon="pixelarticons:external-link"></iconify-icon>
+                    <iconify-icon icon="pixelarticons:external-link" aria-hidden="true"></iconify-icon>
                   </a>
                 </div>
               )}
@@ -56,7 +86,7 @@ import { relics } from '../data/relics';
     }
     .relics-grid-v2 {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 22px;
     }
     .relic-card-v2 {
@@ -79,6 +109,8 @@ import { relics } from '../data/relics';
       background: #0a141c;
       overflow: hidden;
       border-bottom: 2px solid rgba(56, 199, 231, 0.2);
+      display: grid;
+      place-items: center;
     }
     .relic-holo-frame img {
       width: 100%;
@@ -86,6 +118,12 @@ import { relics } from '../data/relics';
       object-fit: cover;
       display: block;
       transition: transform 0.3s ease;
+    }
+    .relic-pixel-crest {
+      display: grid;
+      place-items: center;
+      width: 100%;
+      height: 100%;
     }
     .relic-card-v2:hover .relic-holo-frame img {
       transform: scale(1.05);
@@ -119,7 +157,7 @@ import { relics } from '../data/relics';
       line-height: 1.3;
     }
     .relic-desc {
-      font-size: 13px;
+      font-size: 13.5px;
       color: #c0d8e8;
       line-height: 1.5;
       margin: 0 0 14px;
@@ -149,9 +187,23 @@ import { relics } from '../data/relics';
       justify-content: center;
       gap: 6px;
       width: 100%;
+      min-height: 44px;
       text-align: center;
       padding: 10px 14px;
       font-size: 10px;
     }
   </style>
+
+  <script is:inline>
+    // Reveal SVG pixel crest fallback cleanly if a relic image fails to load
+    document.querySelectorAll('#relics img[data-relic-img]').forEach((img) => {
+      const revealFallback = () => {
+        img.hidden = true;
+        const crest = img.nextElementSibling;
+        if (crest) crest.hidden = false;
+      };
+      img.addEventListener('error', revealFallback);
+      if (img.complete && img.naturalWidth === 0) revealFallback();
+    });
+  </script>
 </section>

@@ -1,0 +1,427 @@
+---
+/**
+ * Path: src/components/OverworldStage.astro
+ * Purpose: 16-bit RPG Overworld viewport shell (`#overworldStage` / `.overworld-shell`)
+ *          mounting the PixiJS v8 WebGPU canvas (`#overworldCanvasHost`),
+ *          fast-travel HUD controls (`[data-travel-zone]`), celestial override
+ *          (`#celestialToggle`), mute toggle (`#audioToggle`), WCAG 2.2.2 motion
+ *          control (`#motionToggle`), companion/chest triggers (`#dogPetTrigger`,
+ *          `#roastChestTrigger`), backend badge (`#rendererBadge`), and static
+ *          accessible fallback markup.
+ * Spec Reference: SPEC-020 (020-hero-wall-16bit-overworld-implementation)
+ */
+---
+
+<div
+  id="overworldStage"
+  class="overworld-stage overworld-shell"
+  data-zone-active="sanctuary"
+>
+  <div class="overworld-bezel-top">
+    <div class="ow-status-group">
+      <span class="ow-badge-title">OVERWORLD</span>
+      <span id="overworldZoneLabel" class="ow-zone-readout">
+        1. Sanctuary Citadel
+      </span>
+      <span
+        id="rendererBadge"
+        class="ow-renderer-badge"
+        data-backend="pending"
+        title="Active PixiJS rendering backend"
+      >
+        webgpu
+      </span>
+    </div>
+
+    <div class="ow-tool-group" role="group" aria-label="Overworld display and sound controls">
+      <button
+        type="button"
+        id="celestialToggle"
+        class="ow-tool-btn"
+        aria-label="Toggle day or night sky"
+      >
+        ☀️ / 🌙
+      </button>
+      <button
+        type="button"
+        id="audioToggle"
+        class="ow-tool-btn"
+        data-muted="false"
+      >
+        Mute SFX
+      </button>
+      <button
+        type="button"
+        id="motionToggle"
+        class="ow-tool-btn"
+      >
+        Pause motion
+      </button>
+    </div>
+  </div>
+
+  <div class="overworld-viewport">
+    <div id="overworldCanvasHost" class="overworld-canvas-host">
+      <div id="overworldFallback" class="overworld-fallback">
+        <p class="ow-fallback-title">16-Bit Sherpa Overworld (Accessible Stage Mode)</p>
+        <p class="ow-fallback-copy">
+          Party: Boris (Level 39 Sherpa), White Dog (memorial companion honoring Emy, Kiba, and Yue),
+          RASS drone, and Ms. Devil. Use Fast Travel or the action buttons below to explore all five
+          world zones and open the monolith chest.
+        </p>
+        <noscript>
+          <p class="ow-fallback-copy">
+            JavaScript is disabled. Jump directly to #sanctuary, #eras, #relics, #trophies, or #beacon below.
+          </p>
+        </noscript>
+      </div>
+    </div>
+  </div>
+
+  <div class="overworld-hud">
+    <nav class="ow-travel-nav" aria-label="Overworld Fast Travel">
+      <button
+        type="button"
+        class="ow-travel-btn is-active"
+        data-travel-zone="sanctuary"
+        aria-current="true"
+      >
+        <span class="ow-key-cap" aria-hidden="true">1</span>
+        <span>Sanctuary</span>
+      </button>
+      <button
+        type="button"
+        class="ow-travel-btn"
+        data-travel-zone="eras"
+      >
+        <span class="ow-key-cap" aria-hidden="true">2</span>
+        <span>Eras</span>
+      </button>
+      <button
+        type="button"
+        class="ow-travel-btn"
+        data-travel-zone="relics"
+      >
+        <span class="ow-key-cap" aria-hidden="true">3</span>
+        <span>Relics</span>
+      </button>
+      <button
+        type="button"
+        class="ow-travel-btn"
+        data-travel-zone="trophies"
+      >
+        <span class="ow-key-cap" aria-hidden="true">4</span>
+        <span>Trophies</span>
+      </button>
+      <button
+        type="button"
+        class="ow-travel-btn"
+        data-travel-zone="beacon"
+      >
+        <span class="ow-key-cap" aria-hidden="true">5</span>
+        <span>Beacon</span>
+      </button>
+    </nav>
+
+    <div class="ow-actions">
+      <button type="button" id="dogPetTrigger" class="ow-action-btn ow-action-dog">
+        Pet Dog [B]
+      </button>
+      <button type="button" id="roastChestTrigger" class="ow-action-btn ow-action-chest">
+        Roast Chest [R]
+      </button>
+    </div>
+
+    <p class="ow-controls-hint">
+      Walk: WASD or Left/Right Arrows · Travel: 1-5 · Dog: B · Chest: R
+    </p>
+  </div>
+</div>
+
+<script>
+  import { initOverworld } from '../scripts/overworld-engine';
+
+  const bootOverworld = () => {
+    void initOverworld();
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', bootOverworld, { once: true });
+  } else {
+    bootOverworld();
+  }
+
+  document.addEventListener('astro:page-load', bootOverworld);
+</script>
+
+<style>
+  /*
+   * OverworldStage internal styling: frames the PixiJS viewport and HUD cleanly
+   * while leaving mobile sticky shell positioning (.overworld-shell) to global.css.
+   */
+  .overworld-stage {
+    max-width: 1200px;
+    margin: 16px auto 24px;
+    border: 3px solid rgba(56, 199, 231, 0.55);
+    background: linear-gradient(180deg, rgba(16, 32, 46, 0.96), rgba(10, 18, 24, 0.98));
+    box-shadow:
+      inset 0 0 0 3px rgba(0, 0, 0, 0.78),
+      0 10px 26px rgba(0, 0, 0, 0.5);
+    padding: 10px 12px;
+  }
+
+  .overworld-bezel-top {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin-bottom: 8px;
+  }
+
+  .ow-status-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .ow-badge-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--gold, #FFD166);
+    padding: 4px 7px;
+    background: #0d151c;
+    border: 2px solid rgba(255, 209, 102, 0.55);
+  }
+
+  .ow-zone-readout {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px;
+    color: var(--fg, #ffffff);
+  }
+
+  .ow-renderer-badge {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    text-transform: uppercase;
+    padding: 4px 6px;
+    color: #0a1218;
+    background: var(--cyan, #38C7E7);
+    border: 2px solid #000000;
+  }
+
+  .ow-renderer-badge[data-backend='webgl'] {
+    background: var(--cream, #F4E3C3);
+  }
+
+  .ow-renderer-badge[data-backend='static'] {
+    background: #a2c4d6;
+  }
+
+  .ow-tool-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ow-tool-btn,
+  .ow-travel-btn,
+  .ow-action-btn {
+    appearance: none;
+    cursor: pointer;
+    min-block-size: 36px;
+    padding: 6px 10px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    line-height: 1.3;
+    color: var(--fg, #ffffff);
+    background: #132535;
+    border: 2px solid rgba(56, 199, 231, 0.5);
+    box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.65), 0 3px 0 #000000;
+  }
+
+  @media (pointer: coarse) {
+    .ow-tool-btn,
+    .ow-travel-btn,
+    .ow-action-btn {
+      min-block-size: 44px;
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .ow-tool-btn,
+    .ow-travel-btn,
+    .ow-action-btn {
+      transition: transform 0.12s ease, border-color 0.12s ease, background-color 0.12s ease;
+    }
+  }
+
+  @media (hover: hover) {
+    .ow-tool-btn:hover,
+    .ow-travel-btn:hover,
+    .ow-action-btn:hover {
+      border-color: var(--gold, #FFD166);
+      transform: translateY(-1px);
+    }
+  }
+
+  .ow-tool-btn:focus-visible,
+  .ow-travel-btn:focus-visible,
+  .ow-action-btn:focus-visible {
+    outline: 3px solid var(--cyan, #38C7E7);
+    outline-offset: 2px;
+  }
+
+  .ow-tool-btn[data-muted='true'] {
+    background: #2b2b2b;
+    border-color: var(--red, #C12E28);
+    color: var(--cream, #F4E3C3);
+  }
+
+  .overworld-viewport {
+    position: relative;
+    border: 3px solid #000000;
+    box-shadow: inset 0 0 0 2px rgba(56, 199, 231, 0.3);
+    background: #0a1218;
+    overflow: hidden;
+  }
+
+  .overworld-canvas-host {
+    position: relative;
+    width: 100%;
+    height: clamp(220px, 32vw, 320px);
+    min-height: 200px;
+  }
+
+  .overworld-fallback {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+    height: 100%;
+    padding: 16px;
+    color: var(--cream, #F4E3C3);
+    background: linear-gradient(180deg, #1C3B54 0%, #0a1218 100%);
+  }
+
+  .overworld-stage.is-mounted .overworld-fallback {
+    display: none;
+  }
+
+  .ow-fallback-title {
+    margin: 0;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 11px;
+    color: var(--gold, #FFD166);
+  }
+
+  .ow-fallback-copy {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    max-inline-size: 68ch;
+  }
+
+  .overworld-hud {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin-top: 8px;
+  }
+
+  .ow-travel-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .ow-travel-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .ow-travel-btn.is-active,
+  .ow-travel-btn[aria-current='true'] {
+    background: var(--primary, #1C3B54);
+    border-color: var(--gold, #FFD166);
+    color: var(--gold, #FFD166);
+  }
+
+  .ow-key-cap {
+    display: inline-grid;
+    place-items: center;
+    min-inline-size: 16px;
+    padding: 2px 3px;
+    background: #0a1218;
+    border: 1px solid rgba(56, 199, 231, 0.55);
+    color: var(--cyan, #38C7E7);
+    font-size: 8px;
+  }
+
+  .ow-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .ow-action-dog {
+    border-color: rgba(244, 227, 195, 0.65);
+    color: var(--cream, #F4E3C3);
+  }
+
+  .ow-action-chest {
+    background: #531715;
+    border-color: var(--red, #C12E28);
+    color: #ffffff;
+  }
+
+  .ow-controls-hint {
+    margin: 0;
+    font-size: 12px;
+    color: #a2c4d6;
+  }
+
+  @media (max-width: 900px) {
+    .overworld-canvas-host {
+      height: clamp(148px, 24dvh, 200px);
+      min-height: 148px;
+    }
+
+    .ow-controls-hint {
+      display: none;
+    }
+
+    .ow-travel-nav {
+      overflow-x: auto;
+      flex-wrap: nowrap;
+      max-width: 100%;
+      padding-bottom: 2px;
+    }
+
+    .ow-travel-btn {
+      flex: 0 0 auto;
+    }
+  }
+
+  @media (forced-colors: active) {
+    .overworld-stage,
+    .overworld-viewport,
+    .ow-tool-btn,
+    .ow-travel-btn,
+    .ow-action-btn {
+      border-color: ButtonText;
+      color: ButtonText;
+    }
+
+    .ow-travel-btn[aria-current='true'] {
+      border-color: Highlight;
+      color: Highlight;
+    }
+  }
+</style>
