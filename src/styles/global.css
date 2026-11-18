@@ -1,15 +1,20 @@
 /*
  * Path: src/styles/global.css
- * Purpose: SPEC-021 Pure 16-Bit RPG Overworld visual system, zero-document-scroll viewport lock
- *          (100vw x 100dvh, overflow: hidden), SNES color palette tokens, desktop widescreen CRT
- *          framing, mobile Game Boy Advance / Color dual-stage (58dvh / 42dvh) layout, SNES
- *          dialogue window styling, native top-layer <dialog> & focusgroup tablist styling,
- *          pixelated gold portrait bezel, and WCAG 2.2.2 motion pause rules.
- * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ * Purpose: SPEC-022 Cozy Campfire Sanctuary & Techno-Organic Alien Frontiers visual system,
+ *          zero-document-scroll viewport lock (100vw x 100dvh, overflow: hidden), SNES +
+ *          techno-organic palette tokens, sleek single-row mobile/desktop .overworld-bezel-top,
+ *          responsive letterboxed .crt-bezel-frame (16:9 / 4:3 desktop), optional CRT scanlines
+ *          on html[data-crt="on"], mobile 58dvh top viewport + 42dvh .gba-controller-deck,
+ *          contained SNES dialogue window & Pokémon [START] menu styling, native top-layer
+ *          <dialog> & focusgroup tablist styling, pixelated gold portrait bezel, and WCAG 2.2.2
+ *          motion pause rules.
+ * Spec Reference: SPEC-022 (022-hero-wall-studio-cozy-rebuild)
  *
  * Operator Notes:
  * - Zero document scroll is enforced on html/body (`overflow: hidden; height: 100dvh;`).
- *   All scrolling happens inside bounded top-layer modals or overlay dialogue inspectors.
+ *   All scrolling happens inside bounded top-layer modals, Start Menu panes, or dialogue scroll boxes.
+ * - `.overworld-bezel-top` stays strictly single-row (`<= 44px` tall on mobile) with no vertical
+ *   clipping or button overlap down to 320px width.
  * - `dialog::backdrop` sets `overflow: hidden` explicitly because `::backdrop` is not a scroll
  *   container by default and would otherwise ignore `overscroll-behavior: contain`.
  * - `[hidden]:not([hidden="until-found"])` avoids clobbering `content-visibility: hidden` on
@@ -17,7 +22,7 @@
  */
 
 :root {
-  /* Canonical SPEC-021 SNES 16-bit palette */
+  /* Canonical SPEC-022 SNES Hearth & Techno-Organic Alien Palette */
   --snes-amber: #f97316;
   --snes-grass: #15803d;
   --snes-rune-purple: #a855f7;
@@ -28,21 +33,25 @@
   --snes-navy-top: #172554;
   --snes-navy-bottom: #090d16;
   --snes-cream: #F4E3C3;
+  --snes-armor-blue: #1C3B54;
+  --snes-holo-cyan: #38C7E7;
+  --snes-bio-emerald: #10b981;
+  --snes-crimson: #dc2626;
 
   /* Semantic UI tokens */
   --bg: var(--snes-obsidian);
   --fg: #f8fafc;
   --muted: #94a3b8;
-  --primary: #1C3B54;
+  --primary: var(--snes-armor-blue);
   --cyan: var(--snes-star-cyan);
   --gold: var(--snes-gold);
   --amber: var(--snes-amber);
   --grass: var(--snes-grass);
   --purple: var(--snes-rune-purple);
   --copper: var(--snes-forge-copper);
+  --emerald: var(--snes-bio-emerald);
   --cream: var(--snes-cream);
-  --red: #dc2626;
-  --emerald: #10b981;
+  --red: var(--snes-crimson);
   --active-accent: var(--snes-amber);
 }
 
@@ -154,7 +163,7 @@ label,
   width: 100%;
   height: 100dvh;
   margin: 0;
-  padding: 10px 14px;
+  padding: 8px 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -167,39 +176,53 @@ label,
     inset 0 0 40px rgba(0, 0, 0, 0.8);
 }
 
-/* Dynamic active-biome accent token */
+/* Dynamic active-room accent token supporting SPEC-022 RoomIds and legacy aliases */
+#overworldStage[data-zone-active="campfire"],
 #overworldStage[data-zone-active="sanctuary"] { --active-accent: var(--snes-amber); }
+#overworldStage[data-zone-active="cyber_chasm"],
 #overworldStage[data-zone-active="eras"] { --active-accent: var(--snes-rune-purple); }
-#overworldStage[data-zone-active="relics"] { --active-accent: var(--snes-forge-copper); }
+#overworldStage[data-zone-active="bio_forge"],
+#overworldStage[data-zone-active="relics"] { --active-accent: var(--snes-bio-emerald); }
 #overworldStage[data-zone-active="trophies"] { --active-accent: var(--snes-gold); }
+#overworldStage[data-zone-active="signal_beacon"],
 #overworldStage[data-zone-active="beacon"] { --active-accent: var(--snes-star-cyan); }
 
-/* Compact Top HUD Bar */
+/* Sleek Single-Row Top HUD Bezel */
 .overworld-bezel-top {
   flex: 0 0 auto;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
-  gap: 6px 10px;
-  padding: 6px 10px;
-  background: linear-gradient(180deg, rgba(23, 37, 84, 0.92), rgba(9, 13, 22, 0.96));
+  gap: 8px;
+  min-block-size: 40px;
+  padding: 5px 10px;
+  background: linear-gradient(180deg, rgba(23, 37, 84, 0.94), rgba(9, 13, 22, 0.97));
   border: 2px solid color-mix(in srgb, var(--active-accent) 60%, #1e293b);
   border-radius: 6px;
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.7);
 }
 
-.ow-status-group,
+.ow-status-group {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 8px;
+}
+
 .ow-tool-group,
 .ow-travel-nav {
+  flex: 0 0 auto;
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
-  min-width: 0;
 }
 
 .ow-char-chip {
+  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -219,14 +242,19 @@ label,
 }
 
 .ow-zone-readout {
+  flex: 0 1 auto;
+  min-inline-size: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-family: 'Press Start 2P', monospace;
-  font-size: 10px;
+  font-size: 9.5px;
   color: #f8fafc;
   white-space: nowrap;
 }
 
 .ow-state-badge,
 #gameStateBadge {
+  flex: 0 0 auto;
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
   padding: 4px 6px;
@@ -240,6 +268,7 @@ label,
 
 .ow-renderer-badge,
 #rendererBadge {
+  flex: 0 0 auto;
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
   text-transform: uppercase;
@@ -267,11 +296,12 @@ label,
 .ow-travel-btn,
 .ow-action-btn {
   appearance: none;
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-block-size: 32px;
+  min-block-size: 30px;
   padding: 5px 9px;
   font-family: 'Press Start 2P', monospace;
   font-size: 8.5px;
@@ -282,6 +312,12 @@ label,
   box-shadow: inset 0 0 0 2px rgba(0, 0, 0, 0.65), 0 2px 0 #000;
   white-space: nowrap;
   touch-action: manipulation;
+}
+
+#btnOpenStartMenu {
+  border-color: var(--snes-gold);
+  color: var(--snes-gold);
+  background: #172554;
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -326,36 +362,59 @@ label,
   font-size: 8px;
 }
 
-/* Primary Live Overworld Game Screen */
+/* Primary Viewport Wrapper + Responsive Letterboxed Desktop CRT Bezel Frame */
 .overworld-viewport {
   position: relative;
   flex: 1 1 auto;
   min-height: 0;
   width: 100%;
+  display: grid;
+  place-items: center;
+  container-type: size;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 45%, rgba(28, 59, 84, 0.24), transparent 70%),
+    #050811;
+  border: 2px solid #000;
+  border-radius: 6px;
+}
+
+/* Desktop letterboxed 16:9 CRT container preserving crisp pixel proportions across 4:3, 16:9, and ultrawide monitors */
+.crt-bezel-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  width: min(100cqi, calc(100cqb * 16 / 9));
+  height: min(100cqb, calc(100cqi * 9 / 16));
+  max-width: 100%;
+  max-height: 100%;
   background: #090d16;
   border: 3px solid #000;
   border-radius: 6px;
   box-shadow:
     inset 0 0 0 2px color-mix(in srgb, var(--active-accent) 45%, #000),
-    0 8px 24px rgba(0, 0, 0, 0.65);
+    0 10px 28px rgba(0, 0, 0, 0.72);
   overflow: hidden;
 }
 
-/* Subtle CRT scanline veneer on viewport without blocking pointer input */
-.overworld-viewport::after {
-  content: "";
+/* Optional CRT scanlines toggled via Settings (#settingCrtBtn -> html[data-crt="on"]) */
+.crt-scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  z-index: 12;
+  z-index: 18;
+  opacity: 0;
   background: repeating-linear-gradient(
     to bottom,
     rgba(0, 0, 0, 0) 0px,
     rgba(0, 0, 0, 0) 2px,
-    rgba(0, 0, 0, 0.14) 3px,
-    rgba(0, 0, 0, 0.14) 4px
+    rgba(0, 0, 0, 0.24) 3px,
+    rgba(0, 0, 0, 0.24) 4px
   );
-  opacity: 0.45;
+  transition: opacity 0.16s ease;
+}
+
+html[data-crt="on"] .crt-scanlines {
+  opacity: 0.55;
 }
 
 .overworld-canvas-host,
@@ -408,25 +467,31 @@ label,
 }
 
 /* ============================================================================
- * 2. UNIVERSAL SNES RPG DIALOGUE BOX & FLOATING INTERACTION PROMPTS
+ * 2. CONTAINED SNES DIALOGUE & FLOATING PROMPTS (aligned with SnesDialogueBox.astro)
  * ============================================================================ */
 .snes-dialogue-box,
 #snesDialogueBox {
   position: absolute;
-  inset-inline: clamp(10px, 2.5vw, 26px);
-  inset-block-end: clamp(10px, 2vh, 20px);
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: max(12px, env(safe-area-inset-bottom, 0px) + 10px);
   z-index: 30;
-  max-height: calc(100% - 22px);
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  padding: 12px 16px;
+  width: min(
+    680px,
+    calc(100% - max(20px, env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px) + 16px))
+  );
+  max-width: 680px;
+  max-height: calc(100% - 34px);
+  overflow: visible;
+  padding: 16px 15px 12px;
   background: linear-gradient(180deg, #172554 0%, #090d16 100%);
   color: #f8fafc;
-  border: 3px solid #f8fafc;
-  outline: 3px solid #000;
+  border: 3px solid #facc15;
+  outline: 2px solid #f8fafc;
+  outline-offset: -6px;
   border-radius: 6px;
   box-shadow:
-    inset 0 0 0 3px var(--snes-gold),
+    0 0 0 3px #090d16,
     0 12px 32px rgba(0, 0, 0, 0.9);
 }
 
@@ -436,8 +501,7 @@ label,
   align-items: center;
   justify-content: space-between;
   gap: 8px;
-  padding-bottom: 8px;
-  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 2px solid rgba(250, 204, 21, 0.35);
 }
 
@@ -454,7 +518,6 @@ label,
 #snesSpeakerName {
   font-family: 'Press Start 2P', monospace;
   font-size: 9px;
-  color: var(--snes-star-cyan);
 }
 
 .snes-state-pill,
@@ -472,15 +535,15 @@ label,
 #snesDialogueText {
   margin: 0;
   font-size: 14px;
-  line-height: 1.55;
-  color: #f8fafc;
+  line-height: 1.5;
+  color: #f4e3c3;
   min-height: 2.2em;
 }
 
 .snes-inspector-content,
 #snesInspectorContent {
-  margin-top: 10px;
-  padding: 10px 12px;
+  margin-top: 6px;
+  padding: 8px 10px;
   background: rgba(9, 13, 22, 0.72);
   border: 2px solid rgba(6, 182, 212, 0.4);
   border-radius: 4px;
@@ -491,7 +554,7 @@ label,
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 
 .snes-choice-btn,
@@ -519,8 +582,7 @@ label,
   flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 10px;
-  padding-top: 8px;
+  padding-top: 6px;
   border-top: 1px solid rgba(248, 250, 252, 0.16);
 }
 
@@ -528,7 +590,7 @@ label,
 #interactionPrompt {
   position: absolute;
   left: 50%;
-  bottom: 14px;
+  bottom: max(12px, env(safe-area-inset-bottom, 0px) + 8px);
   transform: translateX(-50%);
   z-index: 24;
   padding: 7px 12px;
@@ -548,8 +610,8 @@ label,
 .morale-toast,
 #moraleToast {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: 12px;
+  right: 12px;
   z-index: 32;
   padding: 8px 12px;
   background: linear-gradient(180deg, #15803d, #064e3b);
@@ -685,9 +747,10 @@ label,
 }
 
 /* ============================================================================
- * 4. MOBILE (< = 900px) GAME BOY ADVANCE / COLOR DUAL-STAGE LAYOUT
- *    Top Stage = 58dvh (live canvas + dialogue overlay)
- *    Bottom Stage = 42dvh (.gba-controller-deck with D-Pad, A/B, START/SELECT, biome pills)
+ * 4. MOBILE (<= 900px) HANDHELD DUAL-STAGE LAYOUT
+ *    Single-row top bezel (<= 44px high, zero text clipping down to 320px)
+ *    Top Stage = 58dvh (live canvas + dialogue + Start Menu)
+ *    Bottom Stage = 42dvh (.gba-controller-deck with D-Pad, A/B, START/SELECT)
  *    Zero Document Scroll!
  * ============================================================================ */
 @media (max-width: 900px) {
@@ -705,38 +768,108 @@ label,
     overflow: hidden;
   }
 
+  /* Sleek single-row mobile HUD bezel eliminating ref_mobile_ccdd2656.jpg overlap/clipping */
   .overworld-bezel-top {
     flex: 0 0 auto;
-    max-height: 42px;
-    padding: 4px 8px;
-    gap: 6px;
+    min-block-size: 36px;
+    max-block-size: 44px;
+    padding: 4px 6px;
+    gap: 4px;
     flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
+    overflow: visible;
     border-radius: 0;
     border-inline: 0;
     border-top: 0;
   }
 
-  .overworld-bezel-top::-webkit-scrollbar {
-    display: none;
+  .ow-status-group {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 4px;
   }
 
+  .ow-tool-group {
+    flex: 0 0 auto;
+    gap: 4px;
+  }
+
+  .ow-travel-nav,
   .ow-char-vitals,
   .ow-controls-hint {
     display: none;
   }
 
-  /* Upper Game Screen fills the 58dvh top half alongside the slim top HUD strip */
+  /* High-legibility compact typography so all 6 HUD tokens stay on one unclipped row at 320px+ */
+  .ow-char-chip {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 9px;
+    letter-spacing: 0.02em;
+    padding: 3px 5px;
+    border-width: 1.5px;
+  }
+
+  .ow-zone-readout {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 10px;
+  }
+
+  .ow-state-badge,
+  #gameStateBadge {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 8px;
+    padding: 2px 4px;
+  }
+
+  .ow-tool-btn {
+    min-block-size: 28px;
+    padding: 3px 6px;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-weight: 700;
+    font-size: 9.5px;
+    border-width: 1.5px;
+  }
+
+  /* Extend vertical hit target without altering visual 28px row height inside 44px bezel */
+  .ow-tool-btn::after {
+    content: '';
+    position: absolute;
+    inset: -7px 0;
+  }
+
+  .ow-renderer-badge,
+  #rendererBadge {
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    font-weight: 800;
+    font-size: 8px;
+    padding: 3px 5px;
+    border-width: 1.5px;
+  }
+
+  /* Upper Game Screen fills the 58dvh top half cleanly */
   .overworld-viewport {
     flex: 1 1 auto;
     min-height: 0;
     max-height: 58dvh;
+    display: block;
+    container-type: normal;
+    border-radius: 0;
+    border: 0;
+  }
+
+  .crt-bezel-frame {
+    width: 100%;
+    height: 100%;
+    aspect-ratio: auto;
     border-radius: 0;
     border-inline: 4px solid #1e293b;
     border-top: 2px solid #000;
     border-bottom: 5px solid #0f172a;
+    box-shadow: none;
   }
 
   /* Lower GBA / GBC Hardware Deck locks strictly to 42dvh without horizontal clipping at 320px+ */
@@ -746,7 +879,7 @@ label,
     min-height: 42dvh;
     max-height: 42dvh;
     overflow: hidden;
-    padding: 6px 10px max(8px, env(safe-area-inset-bottom));
+    padding: 6px 10px max(8px, env(safe-area-inset-bottom, 0px));
     border-radius: 0;
     border-inline: 0;
     border-bottom: 0;
@@ -796,7 +929,7 @@ label,
 
   .gba-ab-btn {
     min-width: 112px;
-    min-height: 42px;
+    min-height: 44px;
     padding: 6px 10px;
     font-size: 8px;
     white-space: nowrap;
@@ -818,16 +951,67 @@ label,
 
   .snes-dialogue-box,
   #snesDialogueBox {
-    inset-inline: 6px;
-    inset-block-end: 6px;
-    max-height: calc(100% - 12px);
-    padding: 9px 11px;
+    width: calc(
+      100% - max(12px, env(safe-area-inset-left, 0px) + env(safe-area-inset-right, 0px) + 8px)
+    );
+    bottom: max(6px, env(safe-area-inset-bottom, 0px) + 4px);
+    max-height: calc(100% - 26px);
+    padding: 14px 10px 9px;
   }
 
   .snes-dialogue-text,
   #snesDialogueText {
     font-size: 12.5px;
     line-height: 1.45;
+  }
+}
+
+/* Extra-tight 320px-390px screens: keep all 6 bezel items + quick buttons unclipped at 320px */
+@media (max-width: 390px) {
+  .overworld-bezel-top {
+    padding: 3px 4px;
+    gap: 3px;
+  }
+
+  .ow-status-group,
+  .ow-tool-group {
+    gap: 3px;
+  }
+
+  .ow-char-chip {
+    font-size: 7.5px;
+    padding: 2px 4px;
+  }
+
+  .ow-zone-readout {
+    font-size: 8.5px;
+    min-inline-size: 40px;
+  }
+
+  .ow-state-badge,
+  #gameStateBadge {
+    font-size: 7px;
+    padding: 2px 3px;
+    max-inline-size: 56px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .ow-tool-btn {
+    padding: 2px 4px;
+    font-size: 8px;
+    min-block-size: 26px;
+  }
+
+  .ow-renderer-badge,
+  #rendererBadge {
+    font-size: 7px;
+    padding: 2px 3px;
+  }
+
+  .gba-quick-group .ow-action-btn {
+    font-size: 7px;
+    padding: 4px 6px;
   }
 }
 
@@ -909,6 +1093,7 @@ dialog::backdrop {
   font-size: clamp(10px, 1.5vw, 13px);
   line-height: 1.4;
   color: #ffffff;
+  text-wrap: balance;
 }
 
 .hw-modal-close-icon {
@@ -1158,6 +1343,7 @@ dialog::backdrop {
   font-size: 13.5px;
   line-height: 1.5;
   color: #cbd5e1;
+  text-wrap: pretty;
 }
 
 .dossier-loadout-summary {
@@ -1246,6 +1432,7 @@ dialog::backdrop {
   font-size: 13.5px;
   line-height: 1.55;
   color: #e2e8f0;
+  text-wrap: pretty;
 }
 
 .dossier-chip-belt {
@@ -1357,7 +1544,7 @@ dialog::backdrop {
   gap: 8px;
   padding: 14px;
   background: rgba(23, 37, 84, 0.4);
-  border: 2px solid rgba(234, 88, 12, 0.5);
+  border: 2px solid rgba(16, 185, 129, 0.5);
   border-radius: 6px;
 }
 
@@ -1691,7 +1878,7 @@ html[data-lore="1"] .poke-lore-box {
 .channel-val {
   font-size: 12px;
   color: #93c5fd;
-  word-break: break-all;
+  overflow-wrap: anywhere;
 }
 
 .modal-actions,
@@ -1740,7 +1927,7 @@ html[data-lore="1"] .poke-lore-box {
 /* Pause persistent decorative CSS animations cleanly when WCAG 2.2.2 #motionToggle is active,
    while preserving non-motion color/border feedback transitions on buttons and links. */
 html[data-motion="paused"] .pixel-gold-bezel,
-html[data-motion="paused"] .overworld-viewport::after,
+html[data-motion="paused"] .crt-scanlines,
 html[data-motion="paused"] [data-animated="true"] {
   animation: none !important;
   animation-play-state: paused !important;
@@ -1749,6 +1936,7 @@ html[data-motion="paused"] [data-animated="true"] {
 @media (forced-colors: active) {
   .overworld-stage,
   .overworld-viewport,
+  .crt-bezel-frame,
   .snes-dialogue-box,
   dialog.hw-modal,
   .ow-tool-btn,

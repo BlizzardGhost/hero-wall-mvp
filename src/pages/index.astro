@@ -1,22 +1,22 @@
 ---
 /*
  * Path: src/pages/index.astro
- * Purpose: Pure full-viewport 16-bit RPG Overworld entry page mounting OverworldStage
- *          and CharacterDossier inside a fixed zero-scroll game viewport with zero
- *          vertical document sections.
- * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ * Purpose: Pure full-viewport 16-bit RPG studio overworld entry page mounting
+ *          OverworldStage and CharacterDossier inside a fixed zero-scroll game
+ *          viewport with zero website navbar residue or vertical document sections.
+ * Spec Reference: SPEC-022 (022-hero-wall-studio-cozy-rebuild)
  *
  * Operator Notes:
  * - Legacy vertical sections (Hero, About, Timeline, Relics, BadgeWall, CTA, Footer)
- *   are intentionally omitted from document flow; all content lives inside the game FSM
- *   and CharacterDossier terminal.
+ *   are intentionally omitted from document flow; all content lives inside the Campfire
+ *   Sanctuary hub, three alien portal rooms, Pokémon [START] menu, and CharacterDossier.
  */
 import BaseLayout from "../layouts/BaseLayout.astro";
 import OverworldStage from "../components/OverworldStage.astro";
 import CharacterDossier from "../components/CharacterDossier.astro";
 ---
 
-<BaseLayout title="Boris Quijano | 16-Bit RPG Overworld — LATAM AI Sherpa">
+<BaseLayout title="Boris Quijano | Cozy Campfire Sanctuary & Alien Frontiers — 16-Bit RPG">
   <main id="main" class="game-viewport-root">
     <OverworldStage />
     <CharacterDossier />

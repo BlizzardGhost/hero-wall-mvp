@@ -1,17 +1,23 @@
 ---
 /**
  * Path: src/components/OverworldStage.astro
- * Purpose: Full-viewport 16-bit RPG Overworld console shell (`#overworldStage` /
- *          `.overworld-shell`) pairing a compact SNES Top HUD Bar (`.overworld-bezel-top`),
- *          full-bleed PixiJS/Canvas game screen (`.overworld-viewport`) with overlaid
- *          `<SnesDialogueBox />` and accessible `#overworldFallback`, and a tactile
- *          desktop/mobile Game Boy Advance controller deck (`.gba-controller-deck`).
- * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ * Purpose: Full-viewport 16-bit RPG studio console shell (`#overworldStage` /
+ *          `.overworld-shell`) pairing a sleek single-row Top HUD Bezel
+ *          (`.overworld-bezel-top` with zero mobile overlap/clipping down to 320px),
+ *          responsive letterboxed `.crt-bezel-frame` wrapping `#overworldCanvasHost`,
+ *          static `#overworldFallback`, `<SnesDialogueBox />` (including `#pokemonStartMenu`),
+ *          `.crt-scanlines` layer, and tactile `.gba-controller-deck`.
+ * Spec Reference: SPEC-022 (022-hero-wall-studio-cozy-rebuild)
  *
  * Operator Notes:
- * - Desktop (> 900px) frames the stage as a widescreen 16-bit CRT filling 100dvh.
- * - Mobile (<= 900px) splits into a 58dvh top game viewport + 42dvh bottom controller deck.
- * - `#motionToggle` intentionally omits `aria-pressed` per WCAG 2.2.2 / modern-web-guidance motion.
+ * - Eliminates the overflowing multi-button SPEC-021 mobile header (ref_mobile_ccdd2656.jpg):
+ *   Fast Travel, Audio, Crackle, CRT, Celestial Sky, and Transmit live inside the unified
+ *   Pokémon `#pokemonStartMenu` triggered by `#btnOpenStartMenu` / `#btnStartDossier` / [M] / [ESC].
+ * - Desktop (> 900px) letterboxes the 960x540 (16:9) pixel stage inside `.crt-bezel-frame`.
+ * - Mobile (<= 900px) enforces the 58dvh top viewport + 42dvh bottom `.gba-controller-deck`
+ *   so thumbs never obscure Boris, The Dog, RASS, Ms. Devil, or portals.
+ * - `#motionToggle` omits `aria-pressed` per WCAG 2.2.2 / modern-web-guidance `motion`
+ *   because its visible text toggles between `Pause motion` and `Play motion`.
  */
 import SnesDialogueBox from "./SnesDialogueBox.astro";
 ---
@@ -19,101 +25,43 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
 <div
   id="overworldStage"
   class="overworld-stage overworld-shell"
-  data-zone-active="sanctuary"
+  data-zone-active="campfire"
 >
   <h1 id="overworldMainHeading" class="visually-hidden" tabindex="-1">
-    Boris Quijano, Level 39 LATAM AI Sherpa: 16-Bit RPG Overworld
+    Boris Quijano, Level 39 LATAM AI Sherpa: Cozy Campfire Sanctuary and Alien Frontiers 16-Bit RPG
   </h1>
 
-  <!-- Top HUD Bar -->
+  <!-- Sleek Single-Row Top Bezel HUD (fits 320px+ mobile without clipping or wrapping) -->
   <header class="overworld-bezel-top">
     <div class="ow-status-group">
-      <div class="ow-char-chip" aria-label="Hero status: Boris Level 39, HP 100 of 100, MP 999 of 999">
+      <div class="ow-char-chip" aria-label="Hero status: Boris Level 39">
         <span class="ow-char-name">BORIS · LVL 39</span>
-        <span class="ow-char-vitals">HP 100/100 · MP 999/999</span>
       </div>
       <span id="overworldZoneLabel" class="ow-zone-readout">
-        1. Sanctuary Campfire
+        Campfire Sanctuary
       </span>
       <span id="gameStateBadge" class="ow-state-badge">
         EXPLORING
       </span>
     </div>
 
-    <nav class="ow-travel-nav" aria-label="Overworld Fast Travel">
+    <div class="ow-tool-group" role="group" aria-label="Start menu, motion control, and rendering backend">
       <button
         type="button"
-        class="ow-travel-btn is-active"
-        data-travel-zone="sanctuary"
-        aria-current="true"
+        id="btnOpenStartMenu"
+        class="ow-tool-btn ow-start-btn"
+        aria-controls="pokemonStartMenu"
+        aria-expanded="false"
       >
-        <span class="ow-key-cap" aria-hidden="true">1</span>
-        <span>Sanctuary</span>
+        [START]
       </button>
-      <button
-        type="button"
-        class="ow-travel-btn"
-        data-travel-zone="eras"
-      >
-        <span class="ow-key-cap" aria-hidden="true">2</span>
-        <span>Eras</span>
-      </button>
-      <button
-        type="button"
-        class="ow-travel-btn"
-        data-travel-zone="relics"
-      >
-        <span class="ow-key-cap" aria-hidden="true">3</span>
-        <span>Relics</span>
-      </button>
-      <button
-        type="button"
-        class="ow-travel-btn"
-        data-travel-zone="trophies"
-      >
-        <span class="ow-key-cap" aria-hidden="true">4</span>
-        <span>Trophies</span>
-      </button>
-      <button
-        type="button"
-        class="ow-travel-btn"
-        data-travel-zone="beacon"
-      >
-        <span class="ow-key-cap" aria-hidden="true">5</span>
-        <span>Beacon</span>
-      </button>
-    </nav>
-
-    <div class="ow-tool-group" role="group" aria-label="Overworld display, audio, and dossier controls">
-      <button
-        type="button"
-        id="celestialToggle"
-        class="ow-tool-btn"
-        aria-label="Toggle day or night sky"
-      >
-        <span aria-hidden="true">☀️ / 🌙</span>
-      </button>
-      <button
-        type="button"
-        id="audioToggle"
-        class="ow-tool-btn"
-        data-muted="false"
-      >
-        Mute SFX
-      </button>
+      <!-- Omit aria-pressed when button label toggles Pause/Play motion per WCAG 2.2.2 -->
       <button
         type="button"
         id="motionToggle"
         class="ow-tool-btn"
       >
         Pause motion
-      </button>
-      <button
-        type="button"
-        id="btnOpenDossier"
-        class="ow-tool-btn ow-dossier-btn"
-      >
-        [C] Dossier
       </button>
       <span
         id="rendererBadge"
@@ -126,38 +74,42 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
     </div>
   </header>
 
-  <!-- Game Screen Viewport (Canvas Host + Accessible Fallback + SNES Dialogue Overlay) -->
+  <!-- Primary Viewport & Responsive Letterboxed CRT Frame -->
   <div class="overworld-viewport">
-    <div id="overworldCanvasHost" class="overworld-canvas-host">
-      <div id="overworldFallback" class="overworld-fallback">
-        <p class="ow-fallback-title">16-Bit Sherpa Overworld (Accessible Stage Mode)</p>
-        <p class="ow-fallback-copy">
-          Party: Boris (Level 39 Sherpa), White Dog (memorial companion honoring Emy, Kiba, and Yue),
-          RASS drone, and Ms. Devil. Open the Character Dossier terminal or use Fast Travel to explore
-          all five biomes, relics, trophies, and contact channels.
-        </p>
-        <div class="ow-fallback-actions">
-          <button
-            type="button"
-            id="fallbackOpenDossier"
-            class="ow-action-btn ow-fallback-dossier-btn"
-            data-open-dossier
-          >
-            Open [C] Character Dossier
-          </button>
-        </div>
-        <noscript>
+    <div class="crt-bezel-frame">
+      <div id="overworldCanvasHost" class="overworld-canvas-host">
+        <div id="overworldFallback" class="overworld-fallback">
+          <p class="ow-fallback-title">Campfire Sanctuary &amp; Alien Frontiers (Accessible Stage)</p>
           <p class="ow-fallback-copy">
-            JavaScript is disabled. Enable JavaScript to walk the 5-biome overworld and launch the [C] Character Dossier.
+            Campfire Sanctuary: Boris (Level 39 Sherpa), The Dog resting on a woven mat by the embers,
+            RASS holographic companion, and Ms. Devil on the timber bench. Open the [C] Character Dossier
+            or press [START] to warp across Cyber-Chasm, Bio-Forge Spire, and Signal Beacon.
           </p>
-        </noscript>
+          <div class="ow-fallback-actions">
+            <button
+              type="button"
+              id="fallbackOpenDossier"
+              class="ow-action-btn ow-fallback-dossier-btn"
+              data-open-dossier
+            >
+              [C] Open Dossier
+            </button>
+          </div>
+          <noscript>
+            <p class="ow-fallback-copy">
+              JavaScript is disabled. Enable JavaScript to walk the Campfire Sanctuary, enter the
+              three alien portals, and launch the [C] Character Dossier.
+            </p>
+          </noscript>
+        </div>
       </div>
-    </div>
 
-    <SnesDialogueBox />
+      <SnesDialogueBox />
+      <div class="crt-scanlines" aria-hidden="true"></div>
+    </div>
   </div>
 
-  <!-- Bottom Controller / Tactile Game Boy Deck -->
+  <!-- Tactile Handheld Controller Deck (Desktop bottom strip -> Mobile 42dvh deck) -->
   <div class="gba-controller-deck" role="region" aria-label="Overworld controller deck">
     <div class="gba-dpad-grid" role="group" aria-label="Directional pad">
       <button
@@ -200,32 +152,35 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
     </div>
 
     <div class="gba-system-group" role="group" aria-label="System buttons">
-      <button type="button" id="btnStartDossier" class="gba-sys-btn">
-        [START / C] <span class="visually-hidden">Character Dossier</span>
+      <button type="button" id="btnStartDossier" class="gba-sys-btn" aria-label="START: Open Pause Menu">
+        START
       </button>
-      <button type="button" id="btnSelectRoast" class="gba-sys-btn">
-        [SELECT / R] <span class="visually-hidden">Roast Chest</span>
+      <button type="button" id="btnSelectRoast" class="gba-sys-btn" aria-label="SELECT: Open Mimic Roast Chest">
+        SELECT
       </button>
     </div>
 
-    <div class="gba-quick-group" role="group" aria-label="Quick companion and chest actions">
+    <div class="gba-quick-group" role="group" aria-label="Quick companion, chest, and dossier actions">
       <button type="button" id="dogPetTrigger" class="ow-action-btn ow-action-dog">
         Pet Dog [B]
       </button>
       <button type="button" id="roastChestTrigger" class="ow-action-btn ow-action-chest">
         Roast Chest [R]
       </button>
+      <button type="button" id="btnOpenDossier" class="ow-action-btn ow-dossier-btn">
+        [C] Dossier
+      </button>
       <span class="ow-controls-hint">
-        WASD/Arrows: Walk · Space: Action · C: Dossier · B: Dog · R: Roast · 1-5: Biomes
+        WASD/Arrows: Walk · Space: Action · M/START: Menu · C: Dossier · B: Dog · R: Roast · H: Campfire · 1-4: Rooms
       </span>
     </div>
 
     <div class="gba-ab-group" role="group" aria-label="Action buttons">
-      <button type="button" id="btnActionB" class="gba-ab-btn">
-        [B / Dog]
+      <button type="button" id="btnActionB" class="gba-ab-btn" aria-label="B: Pet Dog or Back">
+        B
       </button>
-      <button type="button" id="btnActionA" class="gba-ab-btn">
-        [A / Space]
+      <button type="button" id="btnActionA" class="gba-ab-btn" aria-label="A: Interact or Advance">
+        A
       </button>
     </div>
   </div>
@@ -234,6 +189,7 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
 <script>
   import { initOverworld } from '../scripts/overworld-engine';
 
+  // Ensure accessible fallback button works immediately even if WebGPU/Canvas fails to mount.
   const wireFallbackDossierTrigger = () => {
     const fallbackBtn = document.getElementById('fallbackOpenDossier');
     if (!fallbackBtn || fallbackBtn.dataset.wired === '1') return;
@@ -246,15 +202,22 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
     });
   };
 
+  let engineBooted = false;
+
+  // Boot the single-canvas PixiJS/Canvas2D engine once per page lifecycle.
   const bootOverworld = () => {
     wireFallbackDossierTrigger();
+    if (engineBooted) return;
+    engineBooted = true;
     try {
       void Promise.resolve(initOverworld()).catch((err) => {
+        engineBooted = false;
         if ((window as unknown as { __RASS_OVERWORLD_DEBUG__?: boolean }).__RASS_OVERWORLD_DEBUG__) {
           console.warn('[OverworldStage] Engine init failed; accessible fallback remains active.', err);
         }
       });
     } catch (err) {
+      engineBooted = false;
       if ((window as unknown as { __RASS_OVERWORLD_DEBUG__?: boolean }).__RASS_OVERWORLD_DEBUG__) {
         console.warn('[OverworldStage] Sync engine boot error; accessible fallback remains active.', err);
       }
@@ -272,7 +235,7 @@ import SnesDialogueBox from "./SnesDialogueBox.astro";
 
 <style>
   /*
-   * Minimal :where() styling complements global.css without specificity conflicts.
+   * Low-specificity :where() helpers complementing global.css without specificity collisions.
    */
   :where(.ow-controls-hint) {
     font-size: 11px;

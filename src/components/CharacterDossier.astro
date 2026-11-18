@@ -4,7 +4,7 @@
  * Purpose: Native top-layer <dialog id="characterDossierModal"> RPG Character Dossier &
  *          5-tab Terminal (Status & Bio, Hall of Eras, Relic Vault, Trophy Armory, Signal Beacon)
  *          preserving Boris Quijano's portrait in a pixelated gold bezel and all 21 trophy cards.
- * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ * Spec Reference: SPEC-022 (022-hero-wall-studio-cozy-rebuild)
  *
  * Operator Notes:
  * - Implements modern-web-guidance `dialog` Rule 1: showModal()/close(), closedby="any",
@@ -13,6 +13,8 @@
  * - Implements modern-web-guidance `tabs`: focusgroup="tablist nomemory", role="tab",
  *   aria-selected, focusgroupstart, hidden="until-found" with beforematch find-in-page sync,
  *   and roving-tabindex Arrow/Home/End fallback when !('focusGroup' in HTMLElement.prototype).
+ * - Refers to the campfire companion strictly as The Dog ([THE DOG]) resting on a woven mat.
+ * - Opt-in debug logging via `window.__RASS_DOSSIER_DEBUG__ = true`.
  */
 
 import {
@@ -57,7 +59,7 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
       </button>
     </header>
 
-    <!-- Single-row horizontally scrollable tablist per modern-web-guidance tabs -->
+    <!-- Single-row horizontally scrollable tablist per modern-web-guidance `tabs` -->
     <div
       id="dossierTablist"
       class="dossier-tablist"
@@ -117,7 +119,7 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
       </button>
     </div>
 
-    <!-- Panels share one grid stack; styling lives on inner wrappers so hidden="until-found" collapses cleanly -->
+    <!-- Panels share one grid stack; padding & chrome live on inner wrapper so hidden="until-found" collapses cleanly -->
     <div class="dossier-scroll-body">
       <div class="dossier-panels-stack">
         <!-- TAB 1: STATUS & BIO -->
@@ -219,8 +221,8 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
               </div>
             </div>
 
-            <!-- Memorial Tribute to Emy, Kiba, and Yue -->
-            <aside class="dossier-memorial-box" aria-label="Memorial tribute to Emy, Kiba, and Yue">
+            <!-- Campfire Hearth Companion: The Dog -->
+            <aside class="dossier-memorial-box" aria-label="Campfire companion: The Dog">
               <div class="dossier-memorial-head">
                 <svg viewBox="0 0 16 16" width="16" height="16" fill="#F4E3C3" aria-hidden="true">
                   <rect x="2" y="3" width="4" height="3"></rect>
@@ -230,10 +232,10 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
                   <rect x="5" y="12" width="6" height="2"></rect>
                   <rect x="7" y="14" width="2" height="1"></rect>
                 </svg>
-                <h4>FAITHFUL COMPANIONS · EMY, KIBA &amp; YUE</h4>
+                <h4>HEARTH COMPANION · [THE DOG]</h4>
                 <span class="dossier-morale-pill">+10 Morale Restored</span>
               </div>
-              <p>{CHARACTER_DOSSIER.memorialTribute}</p>
+              <p>{CHARACTER_DOSSIER.companionNote}</p>
             </aside>
           </div>
         </section>
@@ -247,9 +249,9 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
           hidden="until-found"
         >
           <div class="dossier-panel-inner">
-            <h3 class="dossier-tab-heading">HALL OF ERAS · 5 CHRONICLE MONOLITHS</h3>
+            <h3 class="dossier-tab-heading">CYBER-CHASM · HALL OF ERAS (5 MONOLITHS)</h3>
             <p class="dossier-tab-intro">
-              Five obsidian monoliths etched along the expedition road from corporate foundations to sovereign edge intelligence.
+              Five obsidian monoliths standing beneath the Cyber-Chasm aurora from corporate foundations to sovereign edge intelligence.
             </p>
             <ol class="dossier-eras-list">
               {HALL_OF_ERAS.map((entry, idx) => (
@@ -275,9 +277,9 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
           hidden="until-found"
         >
           <div class="dossier-panel-inner">
-            <h3 class="dossier-tab-heading">CYBER-FORGE RELIC VAULT · SHIPPED SYSTEMS</h3>
+            <h3 class="dossier-tab-heading">BIO-FORGE SPIRE · RELIC VAULT</h3>
             <p class="dossier-tab-intro">
-              Production artifacts forged for education, autonomous business operations, and grounded field brands.
+              Production artifacts housed in pulsing glass containment pods for education, autonomous business operations, and grounded field brands.
             </p>
             <div class="dossier-relics-grid">
               {RELIC_VAULT.map((relic) => {
@@ -307,7 +309,7 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
           </div>
         </section>
 
-        <!-- TAB 4: TROPHY ARMORY (All 21 Cards + Sub-Filters + Lore Toggle) -->
+        <!-- TAB 4: TROPHY ARMORY (All 21 Cards from ./badges.ts + Sub-Filters + Lore Toggle) -->
         <section
           id="panel-trophies"
           role="tabpanel"
@@ -520,14 +522,47 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
     const panels = Array.from(dialog.querySelectorAll<HTMLElement>('[role="tabpanel"]'));
     const hasNativeFocusGroup = 'focusGroup' in HTMLElement.prototype;
 
-    // Normalize both tab IDs and BiomeIds so OverworldStage / DialogueBox callers open cleanly.
+    // Normalize RoomId, BiomeId, and tab names so any caller opens the intended section cleanly.
     const normalizeTabId = (raw?: string): string => {
       const value = (raw ?? 'status').toLowerCase().trim();
-      if (value === 'sanctuary' || value === 'bio' || value === 'status') return 'status';
-      if (value === 'eras' || value === 'timeline' || value === 'hall-of-eras') return 'eras';
-      if (value === 'relics' || value === 'work' || value === 'relic-vault') return 'relics';
-      if (value === 'trophies' || value === 'badges' || value === 'trophy-armory') return 'trophies';
-      if (value === 'beacon' || value === 'contact' || value === 'signal-beacon') return 'beacon';
+      if (value === 'campfire' || value === 'sanctuary' || value === 'bio' || value === 'status') {
+        return 'status';
+      }
+      if (
+        value === 'cyber_chasm' ||
+        value === 'cyber-chasm' ||
+        value === 'eras' ||
+        value === 'timeline' ||
+        value === 'hall-of-eras'
+      ) {
+        return 'eras';
+      }
+      if (
+        value === 'bio_forge' ||
+        value === 'bio-forge' ||
+        value === 'relics' ||
+        value === 'work' ||
+        value === 'relic-vault'
+      ) {
+        return 'relics';
+      }
+      if (
+        value === 'trophies' ||
+        value === 'badges' ||
+        value === 'armory' ||
+        value === 'trophy-armory'
+      ) {
+        return 'trophies';
+      }
+      if (
+        value === 'signal_beacon' ||
+        value === 'signal-beacon' ||
+        value === 'beacon' ||
+        value === 'contact' ||
+        value === 'transmit'
+      ) {
+        return 'beacon';
+      }
       return 'status';
     };
 
@@ -684,13 +719,14 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
         e.preventDefault();
         if (relicStatus) {
           relicStatus.textContent =
-            'Camp David Field Compass active: grounded field direction logged in Biome 3.';
+            'Camp David Field Compass active: grounded field direction logged in Bio-Forge Spire.';
           relicStatus.hidden = false;
         }
       });
     });
 
-    // Progressive enhancement outside light-dismiss fallback when !('closedBy' in HTMLDialogElement.prototype).
+    // Outside light-dismiss fallback when !('closedBy' in HTMLDialogElement.prototype).
+    // Uses bounding box + pointerdown/pointerup pairing so text-selection drags do not close accidentally.
     if (!('closedBy' in HTMLDialogElement.prototype)) {
       const outside = (e: PointerEvent, dlg: HTMLDialogElement) => {
         const r = dlg.getBoundingClientRect();
@@ -729,6 +765,12 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
       if (dialog.open) dialog.close('resume');
     });
 
+    const close = () => {
+      if (dialog.open) {
+        dialog.close('api');
+      }
+    };
+
     // Honor [C] close shortcut documented in footer hint while preventing keydown
     // from bubbling to window where overworld-engine would immediately re-open the modal.
     dialog.addEventListener('keydown', (e) => {
@@ -763,12 +805,6 @@ const lockedCount = TROPHY_CARDS.filter((card) => card.isMystery).length;
         activeTab?.focus();
       }
       debugLog('dialog:open', { tabId: tabId ?? 'status' });
-    };
-
-    const close = () => {
-      if (dialog.open) {
-        dialog.close('api');
-      }
     };
 
     win.CharacterDossierTerminal = {

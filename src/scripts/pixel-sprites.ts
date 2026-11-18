@@ -1,17 +1,21 @@
 /**
  * Path: src/scripts/pixel-sprites.ts
- * Purpose: Zero-dependency procedural 16x16 and 24x24 pixel-art sprite sheet
- *          generator using palette-mapped character grids rendered onto offscreen
- *          canvases. Produces nearest-neighbor PixiJS v8 Texture instances AND
- *          reusable offscreen HTMLCanvasElement frames for Canvas2D fallback.
- * Spec Reference: SPEC-021 (021-hero-wall-full-game-overworld)
+ * Purpose: Zero-dependency procedural 16-bit pixel-art sprite sheet generator
+ *          built around a 24-color warm & techno-organic palette (`SPRITE_PALETTE`).
+ *          Produces nearest-neighbor PixiJS v8 Texture instances AND reusable
+ *          offscreen HTMLCanvasElement frames for Canvas2D fallback.
+ * Spec Reference: SPEC-022 (022-hero-wall-studio-cozy-rebuild)
  *
  * Debug Operator Notes:
  * - Set `window.__RASS_OVERWORLD_DEBUG__ = true` to inspect generated texture
  *   dimensions, scaleMode bindings, and offscreen canvas counts in DevTools.
+ * - All grids are authored inline as uniform character matrices (0 KB external
+ *   bitmap assets) and quantized cleanly via `drawMatrixFrame` / `renderMatrixToCanvas`.
  */
 
 export type SpriteDirection = 'down' | 'up' | 'left' | 'right';
+export type BorisSpriteChannel = SpriteDirection | 'idleMug';
+export type AlienRoomPortalId = 'cyber_chasm' | 'bio_forge' | 'signal_beacon';
 export type SpriteGrid = readonly string[];
 export type SpritePalette = Readonly<Record<string, string>>;
 
@@ -45,13 +49,27 @@ export interface SpriteBuildOptions {
 export interface SpriteTextureSet<T = HTMLCanvasElement> {
   pixelSize: number;
   canvases: {
-    boris: Record<SpriteDirection, HTMLCanvasElement[]>;
+    boris: Record<BorisSpriteChannel, HTMLCanvasElement[]>;
+    sleepingDog: HTMLCanvasElement[];
+    dogWake: HTMLCanvasElement[];
+    /** Compatibility alias pointing to `sleepingDog`. */
     whiteDog: HTMLCanvasElement[];
     rassDrone: HTMLCanvasElement[];
     msDevil: HTMLCanvasElement[];
     worldObjects: {
       campfire: HTMLCanvasElement[];
+      shelter: HTMLCanvasElement;
+      armoryLodge: HTMLCanvasElement;
+      portalAlien: HTMLCanvasElement[];
+      portalByRoom: Record<AlienRoomPortalId, HTMLCanvasElement[]>;
+      returnPortal: HTMLCanvasElement[];
       eraObelisk: HTMLCanvasElement;
+      bioPod: HTMLCanvasElement;
+      beaconDish: HTMLCanvasElement;
+      wovenMat: HTMLCanvasElement;
+      commsAntenna: HTMLCanvasElement;
+      timberBench: HTMLCanvasElement;
+      /** Compatibility aliases for landmark renderers. */
       relicPedestal: HTMLCanvasElement;
       trophyPedestal: HTMLCanvasElement;
       beaconTower: HTMLCanvasElement;
@@ -62,13 +80,26 @@ export interface SpriteTextureSet<T = HTMLCanvasElement> {
       heart: HTMLCanvasElement;
     };
   };
-  boris: Record<SpriteDirection, T[]>;
+  boris: Record<BorisSpriteChannel, T[]>;
+  sleepingDog: T[];
+  dogWake: T[];
+  /** Compatibility alias pointing to `sleepingDog`. */
   whiteDog: T[];
   rassDrone: T[];
   msDevil: T[];
   worldObjects: {
     campfire: T[];
+    shelter: T;
+    armoryLodge: T;
+    portalAlien: T[];
+    portalByRoom: Record<AlienRoomPortalId, T[]>;
+    returnPortal: T[];
     eraObelisk: T;
+    bioPod: T;
+    beaconDish: T;
+    wovenMat: T;
+    commsAntenna: T;
+    timberBench: T;
     relicPedestal: T;
     trophyPedestal: T;
     beaconTower: T;
@@ -96,59 +127,59 @@ function debugLog(message: string, detail?: unknown): void {
 }
 
 /**
- * Unified 16-bit SNES RPG color palette shared across party characters and
- * biome landmarks. '.' or ' ' denotes transparent pixels.
+ * Unified 24-color warm campfire & techno-organic alien sprite palette.
+ * `.` or ` ` denotes transparent pixels.
  */
 export const SPRITE_PALETTE: Record<string, string> = {
-  K: '#090d16', // Obsidian outline
-  k: '#1e293b', // Slate pupil / inner trim
-  B: '#1C3B54', // Boris Sherpa cloak & armor base
-  b: '#2d587a', // Boris armor mid-tone highlight
-  d: '#102436', // Boris cloak shadow
-  Y: '#facc15', // Gold trim, devil horns, trophy gold, flame core
-  y: '#ca8a04', // Aged gold shadow
-  S: '#F4E3C3', // Cream dog coat (Emy/Kiba/Yue) & warm skin tone
-  s: '#d6c29c', // Cream shadow / warm parchment
-  W: '#ffffff', // Specular white highlight
-  P: '#854d0e', // Expedition leather pack & wood
-  p: '#b45309', // Copper leather highlight
-  C: '#06b6d4', // RASS cyan hull & starfield beacon cyan
-  c: '#67e8f9', // Bright cyan plasma highlight
-  N: '#0e7490', // Deep cyan hull shadow
-  O: '#f97316', // Campfire amber flame & RASS thruster glow
-  o: '#ea580c', // Cyber-forge copper & magma crust
-  R: '#ef4444', // Ms. Devil crimson wings, mimic tongue & ruby
-  r: '#991b1b', // Deep crimson shadow
-  A: '#a855f7', // Arcane purple obelisk runes
-  a: '#d8b4fe', // Bright purple rune highlight
-  M: '#64748b', // Basalt highlight
-  m: '#334155', // Stone mid-tone
-  n: '#1e293b', // Obsidian monolith body
-  E: '#15803d', // Sanctuary moss accent
-  T: '#78350f', // Warm brown dog eyes & charred logs
+  K: '#090d16', // 01. Obsidian ink outline
+  h: '#151c28', // 02. Dark hair, Boris beard & Ms. Devil locks
+  B: '#1C3B54', // 03. Boris dark Armor Blue base
+  b: '#28597a', // 04. Boris Armor Blue mid-tone highlight
+  d: '#102436', // 05. Deep Armor Blue / Sherpa cloak shadow
+  S: '#e89c61', // 06. Warm rugged skin highlight
+  s: '#c9713b', // 07. Warm skin shadow
+  C: '#38C7E7', // 08. Glowing cyan chest core, visor eyes & RASS hologram
+  c: '#7dd3fc', // 09. Bright cyan energy orb & hologram rim highlight
+  N: '#06b6d4', // 10. Cyan beacon & bio-glass mid-tone
+  n: '#0e7490', // 11. Deep cyan hologram shadow & glass edge
+  F: '#f4e3c3', // 12. Terrier cream coat, mug steam & parchment highlight
+  W: '#ffffff', // 13. Specular white spark & flame heart
+  T: '#9a5b25', // 14. Terrier chestnut coat & carved timber mid-tone
+  t: '#3b2110', // 15. Terrier dark chocolate muzzle/spots & charred timber
+  P: '#78350f', // 16. Sherpa fur/leather cloak trim & shelter beams
+  O: '#f97316', // 17. Campfire amber outer flame & forge copper glow
+  Y: '#facc15', // 18. Gold flame core, lantern light & return portal gold
+  R: '#dc2626', // 19. Ms. Devil crimson & woven mat accent
+  r: '#991b1b', // 20. Ms. Devil deep crimson shadow & woven mat base
+  A: '#a855f7', // 21. Cyber-Chasm arcane purple & alien portal plasma
+  E: '#10b981', // 22. Bio-Forge emerald tendril & moss highlight
+  M: '#64748b', // 23. Hearth stone highlight & observatory steel
+  m: '#334155', // 24. Stone ring mid-tone & dark obsidian slate
 };
 
 /**
- * Boris (Level 39 LATAM AI Sherpa): 4 directions (down, up, left, right) x 4-frame
- * walk cycle = 16 crisp 16x16 frames. Depicts Sherpa hooded cloak, #1C3B54 armor,
- * #facc15 gold trim, and expedition backpack.
+ * Boris (Level 39 LATAM AI Sherpa):
+ * - 4 directions (`down`, `up`, `left`, `right`) x 4-frame walk cycle (16 frames)
+ * - `idleMug`: 2-frame breathing idle holding a warm steaming campfire mug
+ * Depicts bearded Boris in dark Armor Blue (#1C3B54 / #28597a) sci-fi armor,
+ * hooded Sherpa cloak trim, glowing cyan visor/eyes & cyan chest core (#38C7E7).
  */
-export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly SpriteGrid[]>> = {
+export const BORIS_SPRITE_FRAMES: Readonly<Record<BorisSpriteChannel, readonly SpriteGrid[]>> = {
   down: [
     // Frame 0: neutral stance
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KPKSSSSSSKPK..',
-      '..KPKSkSSkSKPK..',
-      '...KPKSSSSKPK...',
-      '...KKYYYYYYKK...',
-      '..KPdBBBBBBdPK..',
-      '.KSKdBYbbYBdKSK.',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh...',
+      '....KhhSShhK....',
+      '....KKhhhhKK....',
+      '..KPPdBBBBdPPK..',
+      '.KBbBBBBBBBBbBK.',
+      '.KBBdBBCCBBdBBK.',
+      '.KSKdBbcCbBdKSK.',
       '.KK.KBBBBBBK.KK.',
-      '....KBYbbYBK....',
       '....KBB..BBK....',
       '....Kdd..ddK....',
       '....KPP..PPK....',
@@ -157,17 +188,17 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 1: left stride forward, right arm swing
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KPKSSSSSSKPK..',
-      '..KPKSkSSkSKPK..',
-      '...KPKSSSSKPK...',
-      '...KKYYYYYYKK...',
-      '..KPdBBBBBBdPK..',
-      '.KSKdBYbbYBdK...',
-      '.KK.KBBBBBBKSK..',
-      '....KBYbbYBK....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh...',
+      '....KhhSShhK....',
+      '....KKhhhhKK....',
+      '..KPPdBBBBdPPK..',
+      '.KBbBBBBBBBBbBK.',
+      '.KBBdBBCCBBdBBK.',
+      '.KSKdBbcCbBdK...',
+      '.KK.KBBBBBBKKSK.',
       '...KBB....BBK...',
       '...KPP....ddK...',
       '..KKKK....PPK...',
@@ -176,17 +207,17 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 2: passing stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBBbbbbBBYK..',
-      '..KPKSSSSSSKPK..',
-      '..KPKSkSSkSKPK..',
-      '...KPKSSSSKPK...',
-      '...KKYYYYYYKK...',
-      '..KPdBBBBBBdPK..',
-      '..KKdBYbbYBdKK..',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh...',
+      '....KhhSShhK....',
+      '....KKhhhhKK....',
+      '..KPPdBBBBdPPK..',
+      '.KBbBBBBBBBBbBK.',
+      '.KBBdBBCCBBdBBK.',
+      '..KKdBbcCbBdKK..',
       '....KBBBBBBK....',
-      '....KBYbbYBK....',
       '....KBB..BBK....',
       '....KPP..ddK....',
       '....KKK..PPK....',
@@ -195,17 +226,17 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 3: right stride forward, left arm swing
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KPKSSSSSSKPK..',
-      '..KPKSkSSkSKPK..',
-      '...KPKSSSSKPK...',
-      '...KKYYYYYYKK...',
-      '..KPdBBBBBBdPK..',
-      '...KdBYbbYBdKSK.',
-      '..KSKBBBBBBK.KK.',
-      '....KBYbbYBK....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh...',
+      '....KhhSShhK....',
+      '....KKhhhhKK....',
+      '..KPPdBBBBdPPK..',
+      '.KBbBBBBBBBBbBK.',
+      '.KBBdBBCCBBdBBK.',
+      '...KdBbcCbBdKSK.',
+      '.KSKKBBBBBBK.KK.',
       '...KBB....BBK...',
       '...Kdd....PPK...',
       '...KPP....KKKK..',
@@ -213,39 +244,39 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     ],
   ],
   up: [
-    // Frame 0: neutral north view showing expedition pack & hood
+    // Frame 0: north view showing hooded Sherpa cloak & pack
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KBBBBBBBBBBK..',
+      '....KBBBBBBK....',
+      '...KBBbbbbBBK...',
       '..KBBddddddBBK..',
-      '...KKYYYYYYKK...',
-      '..KPPpPPPPpPPK..',
-      '.KBPPpYYYYpPPBK.',
-      '.KBPPPPPPPPPPBK.',
-      '.KKpPPppppPPpKK.',
-      '...KKBBBBBBKK...',
+      '..KPPdBBBBdPPK..',
+      '..KPPBBBBBBPPK..',
+      '...KKPPPPPPKK...',
+      '..KPPBBBBBBPPK..',
+      '.KBbPBBCCBBPbBK.',
+      '.KBBPBBBBBBPBBK.',
+      '.KK.KBBBBBBK.KK.',
+      '....KBBddBBK....',
       '....KBB..BBK....',
       '....Kdd..ddK....',
       '....KPP..PPK....',
       '...KKKK..KKKK...',
     ],
-    // Frame 1: left boot lifted
+    // Frame 1: left stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KBBBBBBBBBBK..',
+      '....KBBBBBBK....',
+      '...KBBbbbbBBK...',
       '..KBBddddddBBK..',
-      '...KKYYYYYYKK...',
-      '..KPPpPPPPpPPK..',
-      '.KBPPpYYYYpPPBK.',
-      '.KBPPPPPPPPPPBK.',
-      '.KKpPPppppPPpKK.',
-      '...KKBBBBBBKK...',
+      '..KPPdBBBBdPPK..',
+      '..KPPBBBBBBPPK..',
+      '...KKPPPPPPKK...',
+      '..KPPBBBBBBPPK..',
+      '.KBbPBBCCBBPbBK.',
+      '.KBBPBBBBBBPBBK.',
+      '.KK.KBBBBBBK....',
+      '....KBBddBBK....',
       '....KBB..BBK....',
       '....KPP..ddK....',
       '....KKK..PPK....',
@@ -254,36 +285,36 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 2: passing stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBBbbbbBBYK..',
-      '..KBBBBBBBBBBK..',
+      '....KBBBBBBK....',
+      '...KBBbbbbBBK...',
       '..KBBddddddBBK..',
-      '...KKYYYYYYKK...',
-      '..KPPpPPPPpPPK..',
-      '.KBPPpYYYYpPPBK.',
-      '.KBPPPPPPPPPPBK.',
-      '.KKpPPppppPPpKK.',
-      '...KKBBBBBBKK...',
+      '..KPPdBBBBdPPK..',
+      '..KPPBBBBBBPPK..',
+      '...KKPPPPPPKK...',
+      '..KPPBBBBBBPPK..',
+      '.KBbPBBCCBBPbBK.',
+      '.KBBPBBBBBBPBBK.',
+      '..KKKBBBBBBKKK..',
+      '....KBBddBBK....',
       '....KBB..BBK....',
       '....Kdd..ddK....',
       '....KPP..PPK....',
       '....KKK..KKK....',
     ],
-    // Frame 3: right boot lifted
+    // Frame 3: right stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbbbbbBYK..',
-      '..KBBBBBBBBBBK..',
+      '....KBBBBBBK....',
+      '...KBBbbbbBBK...',
       '..KBBddddddBBK..',
-      '...KKYYYYYYKK...',
-      '..KPPpPPPPpPPK..',
-      '.KBPPpYYYYpPPBK.',
-      '.KBPPPPPPPPPPBK.',
-      '.KKpPPppppPPpKK.',
-      '...KKBBBBBBKK...',
+      '..KPPdBBBBdPPK..',
+      '..KPPBBBBBBPPK..',
+      '...KKPPPPPPKK...',
+      '..KPPBBBBBBPPK..',
+      '.KBbPBBCCBBPbBK.',
+      '.KBBPBBBBBBPBBK.',
+      '....KBBBBBBK.KK.',
+      '....KBBddBBK....',
       '....KBB..BBK....',
       '....Kdd..PPK....',
       '....KPP..KKK....',
@@ -291,39 +322,39 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     ],
   ],
   left: [
-    // Frame 0: neutral west profile (pack visible on back right)
+    // Frame 0: west profile showing cyan eye, beard & Sherpa hood pack
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbBBBBYYK..',
-      '..KYKSSSSBBPPK..',
-      '..KKkSSSSBBPPK..',
-      '...KKSSSSBPPPK..',
-      '...KKYYYYBPPPK..',
-      '..KBBBBBbpPPPK..',
-      '..KBSKBBbpPPK...',
-      '..KBBBBBbpPK....',
-      '...KBYbbYBK.....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KhCSSSSSBBPK..',
+      '..KhhSSSSSBBPK..',
+      '...KKhhhhSBBPK..',
+      '....KKhhhPPPK...',
+      '..KPPBBBBPPPK...',
+      '.KBbBBBCBBPPK...',
+      '.KBBSKBBBBPPK...',
+      '.KBBbBBBBBBPK...',
+      '...KKBBBBBBK....',
       '....KBB..BBK....',
       '....Kdd..ddK....',
       '....KPP..PPK....',
       '...KKKK..KKKK...',
     ],
-    // Frame 1: stride wide
+    // Frame 1: wide stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbBBBBYYK..',
-      '..KYKSSSSBBPPK..',
-      '..KKkSSSSBBPPK..',
-      '...KKSSSSBPPPK..',
-      '...KKYYYYBPPPK..',
-      '..KBBBBBbpPPPK..',
-      '.KSKBBBBbpPPK...',
-      '..KBBBBBbpPK....',
-      '...KBYbbYBK.....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KhCSSSSSBBPK..',
+      '..KhhSSSSSBBPK..',
+      '...KKhhhhSBBPK..',
+      '....KKhhhPPPK...',
+      '..KPPBBBBPPPK...',
+      '.KBbBBBCBBPPK...',
+      '.KSKBBBBBBPPK...',
+      '..KKbBBBBBBPK...',
+      '...KKBBBBBBK....',
       '...KBB...BBK....',
       '..Kdd.....ddK...',
       '.KPP.......PPK..',
@@ -332,36 +363,36 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 2: passing stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbBBBBYYK..',
-      '..KYKSSSSBBPPK..',
-      '..KKkSSSSBBPPK..',
-      '...KKSSSSBPPPK..',
-      '...KKYYYYBPPPK..',
-      '..KBBBBBbpPPPK..',
-      '..KBBKSKbpPPK...',
-      '..KBBBBBbpPK....',
-      '...KBYbbYBK.....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KhCSSSSSBBPK..',
+      '..KhhSSSSSBBPK..',
+      '...KKhhhhSBBPK..',
+      '....KKhhhPPPK...',
+      '..KPPBBBBPPPK...',
+      '.KBbBBBCBBPPK...',
+      '.KBBKSKBBBPPK...',
+      '.KBBbBBBBBBPK...',
+      '...KKBBBBBBK....',
       '.....KBBBBK.....',
       '.....KddddK.....',
       '.....KPPPPK.....',
       '....KKKKKKK.....',
     ],
-    // Frame 3: stride wide alternate
+    // Frame 3: alternate stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYBbbBBBBYYK..',
-      '..KYKSSSSBBPPK..',
-      '..KKkSSSSBBPPK..',
-      '...KKSSSSBPPPK..',
-      '...KKYYYYBPPPK..',
-      '..KBBBBBbpPPPK..',
-      '..KBBBBKSKPPK...',
-      '..KBBBBBbpPK....',
-      '...KBYbbYBK.....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KhCSSSSSBBPK..',
+      '..KhhSSSSSBBPK..',
+      '...KKhhhhSBBPK..',
+      '....KKhhhPPPK...',
+      '..KPPBBBBPPPK...',
+      '.KBbBBBCBBPPK...',
+      '.KBBBBKSKBPPK...',
+      '.KBBbBBBBBBPK...',
+      '...KKBBBBBBK....',
       '...KBB...BBK....',
       '...Kdd....ddK...',
       '...KPP.....PPK..',
@@ -369,39 +400,39 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     ],
   ],
   right: [
-    // Frame 0: neutral east profile (pack visible on back left)
+    // Frame 0: east profile
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYYbbbbBBBYK..',
-      '..KPPBBSSSSKYK..',
-      '..KPPBBSSSSkKK..',
-      '..KPPPBSSSSKK...',
-      '..KPPPBYYYYKK...',
-      '..KPPPpbBBBBBK..',
-      '...KPPpbBBKSBK..',
-      '....KPpbBBBBBK..',
-      '.....KBYbbYBK...',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KPBBSSSSSCKh..',
+      '..KPBBSSSSShhK..',
+      '..KPBBSssssKK...',
+      '...KPPPPhhhKK...',
+      '...KPPPBBBBPPK..',
+      '...KPPBBCBBBbBK.',
+      '...KPPBBBBKSBBK.',
+      '...KPBBBBBBbBBK.',
+      '....KBBBBBBKK...',
       '....KBB..BBK....',
       '....Kdd..ddK....',
       '....KPP..PPK....',
       '...KKKK..KKKK...',
     ],
-    // Frame 1: stride wide
+    // Frame 1: wide stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYYbbbbBBBYK..',
-      '..KPPBBSSSSKYK..',
-      '..KPPBBSSSSkKK..',
-      '..KPPPBSSSSKK...',
-      '..KPPPBYYYYKK...',
-      '..KPPPpbBBBBBK..',
-      '...KPPpbBBBBKSK.',
-      '....KPpbBBBBBK..',
-      '.....KBYbbYBK...',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KPBBSSSSSCKh..',
+      '..KPBBSSSSShhK..',
+      '..KPBBSssssKK...',
+      '...KPPPPhhhKK...',
+      '...KPPPBBBBPPK..',
+      '...KPPBBCBBBbBK.',
+      '...KPPBBBBBBKSK.',
+      '...KPBBBBBBbKK..',
+      '....KBBBBBBKK...',
       '....KBB...BBK...',
       '...Kdd.....ddK..',
       '..KPP.......PPK.',
@@ -410,228 +441,313 @@ export const BORIS_SPRITE_FRAMES: Readonly<Record<SpriteDirection, readonly Spri
     // Frame 2: passing stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYYbbbbBBBYK..',
-      '..KPPBBSSSSKYK..',
-      '..KPPBBSSSSkKK..',
-      '..KPPPBSSSSKK...',
-      '..KPPPBYYYYKK...',
-      '..KPPPpbBBBBBK..',
-      '...KPPpbKSKBBK..',
-      '....KPpbBBBBBK..',
-      '.....KBYbbYBK...',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KPBBSSSSSCKh..',
+      '..KPBBSSSSShhK..',
+      '..KPBBSssssKK...',
+      '...KPPPPhhhKK...',
+      '...KPPPBBBBPPK..',
+      '...KPPBBCBBBbBK.',
+      '...KPPBBBKSKBBK.',
+      '...KPBBBBBBbBBK.',
+      '....KBBBBBBKK...',
       '.....KBBBBK.....',
       '.....KddddK.....',
       '.....KPPPPK.....',
       '.....KKKKKKK....',
     ],
-    // Frame 3: stride wide alternate
+    // Frame 3: alternate stride
     [
       '.....KKKKKK.....',
-      '....KYYYYYYK....',
-      '...KYBBBBBBYK...',
-      '..KYYbbbbBBBYK..',
-      '..KPPBBSSSSKYK..',
-      '..KPPBBSSSSkKK..',
-      '..KPPPBSSSSKK...',
-      '..KPPPBYYYYKK...',
-      '..KPPPpbBBBBBK..',
-      '...KPPKSKBBBBK..',
-      '....KPpbBBBBBK..',
-      '.....KBYbbYBK...',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '..KPBBSSSSSCKh..',
+      '..KPBBSSSSShhK..',
+      '..KPBBSssssKK...',
+      '...KPPPPhhhKK...',
+      '...KPPPBBBBPPK..',
+      '...KPPBBCBBBbBK.',
+      '...KPPBKSKBBBBK.',
+      '...KPBBBBBBbBBK.',
+      '....KBBBBBBKK...',
       '....KBB...BBK...',
       '...Kdd....ddK...',
       '..KPP.....PPK...',
       '.KKKK....KKKK...',
     ],
   ],
+  idleMug: [
+    // Frame 0: cozy breathing stance holding warm steaming mug
+    [
+      '.....KKKKKK.....',
+      '....KhhhhhhK....',
+      '...KhhSSSShhK...',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh.F.',
+      '....KhhSShhK.F..',
+      '....KKhhhhKK.FF.',
+      '..KPPdBBBBdPPK..',
+      '.KBbBBBBBBBBbBK.',
+      '.KBBdBBCCBBdKFFK',
+      '.KSKdBbcCbBdKPTK',
+      '.KK.KBBBBBBK.KKK',
+      '....KBB..BBK....',
+      '....Kdd..ddK....',
+      '....KPP..PPK....',
+      '...KKKK..KKKK...',
+    ],
+    // Frame 1: subtle 1px inhale lift, glowing core pulse & rising steam
+    [
+      '.....KKKKKK...F.',
+      '....KhhhhhhK.F..',
+      '...KhhSSSShhK.F.',
+      '...KhSCssCSKh...',
+      '...KhSSSSSSKh...',
+      '....KhhSShhK....',
+      '..KKPPhhhhPPKK..',
+      '.KBbPdBBBBdPbBK.',
+      '.KBBdBBcCBbdKFFK',
+      '.KSKdBbCCbBdKPTK',
+      '.KK.KBBBBBBK.KKK',
+      '....KBBBBBBK....',
+      '....KBB..BBK....',
+      '....Kdd..ddK....',
+      '....KPP..PPK....',
+      '...KKKK..KKKK...',
+    ],
+  ],
 };
 
 /**
- * White Dog memorial companion (Emy, Kiba, and Yue tribute):
- * 4-frame 16x16 trot cycle with wagging tail, #F4E3C3 cream coat, warm eyes, and amber collar.
+ * The Dog: Brown-and-white terrier (#f4e3c3, #9a5b25, #3b2110) curled up
+ * sleeping on a woven crimson/amber mat by the campfire embers.
+ * 4 frames: peaceful breath, chest rise, ear twitch, and cozy exhale.
  */
-export const WHITE_DOG_FRAMES: readonly SpriteGrid[] = [
-  // Frame 0: tail high, legs wide trot
+export const SLEEPING_DOG_FRAMES: readonly SpriteGrid[] = [
+  // Frame 0: curled restful sleep
   [
     '................',
-    '........KK..KK..',
-    '.......KSSKKSSK.',
-    '......KSSSSSSSSK',
-    '.KK...KSSKTKSSKK',
-    '.KSSK.KSSSSSSKK.',
-    '..KSSKKSSSSSOOK.',
-    '...KSSSSSSSSWWK.',
-    '...KSSSSSSSSSSK.',
-    '...KSSssssssSSK.',
-    '....KSSKKKKSSK..',
-    '...KSSK....KSSK.',
-    '..KSSK......KSSK',
-    '..KKK........KKK',
+    '................',
+    '................',
+    '................',
+    '................',
+    '....KK..........',
+    '...KTTKK.KKKKK..',
+    '..KTTTFFKFFFFtK.',
+    '.KFFtFFtKFFTTTtK',
+    '.KFFFFFKFFFFTTFK',
+    '.rKFFFFFFFFFFFKr',
+    'rRKKFFFFFFFFFKKr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
     '................',
     '................',
   ],
-  // Frame 1: tail wag mid, body lifted 1px in mid-trot
+  // Frame 1: gentle chest rise inhale
   [
-    '........KK..KK..',
-    '.......KSSKKSSK.',
-    '......KSSSSSSSSK',
-    '......KSSKTKSSKK',
-    '......KSSSSSSKK.',
-    '.KKK..KSSSSSOOK.',
-    'KSSSKKSSSSSSWWK.',
-    '.KSSSSSSSSSSSSK.',
-    '..KSSSssssssSSK.',
-    '...KSSKKKKKKSSK.',
-    '....KSSK..KSSK..',
-    '....KSSK..KSSK..',
-    '....KKK....KKK..',
     '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '....KK...KKKKK..',
+    '...KTTKKKFFFFtK.',
+    '..KTTTFFKFFTTTtK',
+    '.KFFtFFtKFFFTTFK',
+    '.KFFFFFKFFFFFFFK',
+    '.rKFFFFFFFFFFFKr',
+    'rRKKFFFFFFFFFKKr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
     '................',
     '................',
   ],
-  // Frame 2: tail dipped, paws crossed forward
+  // Frame 2: gentle chest rise + right ear twitch
   [
     '................',
-    '........KK..KK..',
-    '.......KSSKKSSK.',
-    '......KSSSSSSSSK',
-    '......KSSKTKSSKK',
-    '......KSSSSSSKK.',
-    '..KK..KSSSSSOOK.',
-    '.KSSKKSSSSSSWWK.',
-    'KSSKSSSSSSSSSSK.',
-    '.KK.KSSssssssSK.',
-    '....KSSKKKKSSK..',
-    '....KSSK..KSSK..',
-    '...KSSK..KSSK...',
-    '...KKK...KKK....',
+    '................',
+    '................',
+    '................',
+    '...KK...........',
+    '..KTTK...KKKKK..',
+    '..KTTTKKKFFFFtK.',
+    '..KTTTFFKFFTTTtK',
+    '.KFFtFFtKFFFTTFK',
+    '.KFFFFFKFFFFFFFK',
+    '.rKFFFFFFFFFFFKr',
+    'rRKKFFFFFFFFFKKr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
     '................',
     '................',
   ],
-  // Frame 3: tail wagging back up, passing trot stride
+  // Frame 3: exhale back down into warm curl
   [
-    '........KK..KK..',
-    '.......KSSKKSSK.',
-    '......KSSSSSSSSK',
-    '..KK..KSSKTKSSKK',
-    '.KSSK.KSSSSSSKK.',
-    '..KSSKKSSSSSOOK.',
-    '...KSSSSSSSSWWK.',
-    '...KSSSSSSSSSSK.',
-    '...KSSssssssSSK.',
-    '....KSSKKKKSSK..',
-    '....KSSK..KSSK..',
-    '.....KSSKKSSK...',
-    '.....KKK..KKK...',
     '................',
+    '................',
+    '................',
+    '................',
+    '................',
+    '....KK..........',
+    '...KTTKK.KKKKK..',
+    '..KTTTFFKFFFFtKK',
+    '.KFFtFFtKFFTTTtK',
+    '.KFFFFFKFFFFTTFK',
+    '.rKFFFFFFFFFFFKr',
+    'rRKKFFFFFFFFFKKr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
     '................',
     '................',
   ],
 ];
 
 /**
- * RASS Drone: 2-frame 16x16 kinetic hover loop (#06b6d4 cyan hull + #f97316 thruster glow).
+ * Wake & tail-wag frames played when Boris pets The Dog ([B]) by the campfire.
+ */
+export const DOG_WAKE_FRAMES: readonly SpriteGrid[] = [
+  // Frame 0: perked sitting terrier with bright eyes & upright tail
+  [
+    '................',
+    '........KK..KK..',
+    '.......KTTKKTFK.',
+    '......KTTTFFFFK.',
+    '......KTtFFKtFFK',
+    '.......KFFFFFFtK',
+    '.......KFFOOOOFK',
+    '...KK..KFFFFFFK.',
+    '..KtFK.KFFTTTKK.',
+    '...KFFKFFFFFFK..',
+    '..rKFFFFFFFFFKr.',
+    'rRYKFFKFFKFFKYRr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
+    '................',
+    '................',
+  ],
+  // Frame 1: wagging tail & happy 1px head bounce
+  [
+    '................',
+    '.......KK..KK...',
+    '......KTTKKTFK..',
+    '.....KTTTFFFFK..',
+    '.....KTtFFKtFFK.',
+    '......KFFFFFFtK.',
+    '.KK...KFFOOOOFK.',
+    'KtFK..KFFFFFFK..',
+    '.KFFKKKFFTTTKK..',
+    '..KFFFFFFFFFFK..',
+    '..rKFFFFFFFFFKr.',
+    'rRYKFFKFFKFFKYRr',
+    'rOYRRRRRRRRRRYOr',
+    '.rrrrrrrrrrrrrr.',
+    '................',
+    '................',
+  ],
+];
+
+/** Compatibility alias preserving downstream `WHITE_DOG_FRAMES` symbol consumers. */
+export const WHITE_DOG_FRAMES = SLEEPING_DOG_FRAMES;
+
+/**
+ * RASS: Glowing holographic cyan female AI figure (#38C7E7 / #7dd3fc) with
+ * floating cyan energy orb, 2-frame hover loop near the campfire radio antenna.
  */
 export const RASS_DRONE_FRAMES: readonly SpriteGrid[] = [
-  // Frame 0: steady hover, cyan antenna tip
+  // Frame 0: holographic cyan stance with glowing floating orb
   [
-    '.......cc.......',
-    '.......KK.......',
-    '.....KKCCKK.....',
-    '...KKCCCCCCKK...',
-    '..KCCccccccCCK..',
-    '..KCNKKKKKKNCK..',
-    '.KCNKccYYccKNCK.',
-    '.KCNKKKKKKKKNCK.',
-    '..KCCCCCCCCCCK..',
-    '...KNNNNNNNNK...',
-    '....KKO..OKK....',
-    '....KOO..OOK....',
-    '.....OY..YO.....',
-    '.....O....O.....',
-    '................',
+    '.......nnnn.....',
+    '......nCCCCn....',
+    '.....nCCccCCn...',
+    '.....nCcWWcCn...',
+    '.ccc.nCCCCCCn...',
+    'cWWWc.nNccNn....',
+    '.ccc.nCCWWCCn...',
+    '..NNnnCCCCCCn...',
+    '.....nCccccCn...',
+    '.....nCCCCCCn...',
+    '.....nNNCCNNn...',
+    '.....nCC..CCn...',
+    '.....nNN..NNn...',
+    '......nn..nn....',
+    '......c....c....',
     '................',
   ],
-  // Frame 1: 1px upward kinetic bob, pulsing gold antenna & wider thruster flare
+  // Frame 1: 1px vertical hover float + pulsed orb flare
   [
-    '.......YY.......',
-    '.....KKCCKK.....',
-    '...KKCCCCCCKK...',
-    '..KCCccccccCCK..',
-    '..KCNKKKKKKNCK..',
-    '.KCNKcWWWWcKNCK.',
-    '.KCNKKKKKKKKNCK.',
-    '..KCCCCCCCCCCK..',
-    '...KNNNNNNNNK...',
-    '....KKO..OKK....',
-    '...KOOo..oOOK...',
-    '....oYY..YYo....',
-    '....O.O..O.O....',
-    '................',
+    '......nCCCCn....',
+    '.....nCCccCCn...',
+    '.....nCcWWcCn...',
+    'cWc..nCCCCCCn...',
+    'WWcWc.nNccNn....',
+    '.ccc.nCCWWCCn...',
+    '.cNNnnCCCCCCn...',
+    '.....nCccccCn...',
+    '.....nCCCCCCn...',
+    '.....nNNCCNNn...',
+    '.....nCC..CCn...',
+    '.....nNN..NNn...',
+    '......nn..nn....',
+    '.....c..cc..c...',
     '................',
     '................',
   ],
 ];
 
 /**
- * Ms. Devil: 2-frame 16x16 darting familiar loop (#ef4444 crimson wings + #facc15 horns).
+ * Ms. Devil: Crimson horned demoness (#dc2626 / #991b1b) with dark flowing locks
+ * holding an amber campfire flame, 2-frame lounging idle on a carved timber bench.
  */
 export const MS_DEVIL_FRAMES: readonly SpriteGrid[] = [
-  // Frame 0: crimson wings raised high
+  // Frame 0: relaxed bench lounge, amber flame held aloft
   [
-    '...YK......KY...',
-    '...YKK....KKY...',
-    '..KRRKKKKKKRRK..',
-    '.KRRrRRRRRRrRRK.',
-    'KRRrKRRRRRRKrRRK',
-    'KRr.KRYRRYRK.rRK',
-    'KK..KRRRRRRK..KK',
-    '....KRRRRRRK....',
-    '..KKKRRrrRRK....',
-    '.KRK.KRRRRK.....',
-    '.KK..KR..RK.....',
-    '.....KK..KK.....',
-    '................',
-    '................',
+    '............O...',
+    '...K....K..OYO..',
+    '...RK..KR..OWO..',
+    '..hRRRRRRh.OYO..',
+    '.hhRKRKRrh.KPK..',
+    '.hhRRRRRrhKRRK..',
+    'hh.KrRRRrrRRK...',
+    'h..KRRRRRRRRK...',
+    '...KrrRRRRrrK...',
+    '..KRRRRRRRRK....',
+    '.KTTTTTTTTTTTK..',
+    '.KPPPPPPPPPPPK..',
+    '..KttK...KttK...',
+    '..KKK.....KKK...',
     '................',
     '................',
   ],
-  // Frame 1: crimson wings swept down in nimble dart
+  // Frame 1: gentle dark lock sway + taller crackling campfire flame
   [
-    '................',
-    '...YK......KY...',
-    '...YKK....KKY...',
-    '....KRRRRRRK....',
-    '...KRRRRRRRRK...',
-    '...KRYRRYRRRK...',
-    '..KKRRRRRRRRKK..',
-    '.KRRrKRRRRKrRRK.',
-    'KRRr.KROORK.rRRK',
-    'KRr..KRRRRK..rRK',
-    'KK...KR..RK...KK',
-    '....KK....KK....',
-    '...KRK..........',
-    '....K...........',
+    '...........OO...',
+    '...K....K..OYO..',
+    '...RK..KR.OYWYO.',
+    '..hRRRRRRh.OYO..',
+    '.hhRKRKRrh.OPO..',
+    'hh.RRRRRrhKRRK..',
+    'hh.KrRRRrrRRK...',
+    '.h.KRRRRRRRRK...',
+    '...KrrRRRRrrK...',
+    '..KRRRRRRRRK....',
+    '.KTTTTTTTTTTTK..',
+    '.KPPPPPPPPPPPK..',
+    '..KttK...KttK...',
+    '..KKK.....KKK...',
     '................',
     '................',
   ],
 ];
 
 /**
- * Interactive 24x24 and 16x16 world landmark & object sprites:
- * - campfire (3-frame 24x24 flickering amber #f97316 flame)
- * - eraObelisk (24x24 obsidian obelisk with #a855f7 purple runes)
- * - relicPedestal (24x24 Cyber-Forge copper/magma pedestal #ea580c)
- * - trophyPedestal (24x24 gilded Trophy Armory dais #facc15)
- * - beaconTower (24x24 starfield cyan #06b6d4 Mountain Signal Beacon)
- * - roastChest (16x16 closed & open Mimic Roast Chest)
- * - heart (12x12 pixel heart bubble for petting the White Dog)
+ * Interactive 16x16, 24x24, and 32x24 world landmarks, shelters, portals,
+ * and props across the Campfire Sanctuary and 3 Techno-Organic Alien Rooms.
  */
 export const WORLD_OBJECT_SPRITES = {
+  /** 4-frame 24x24 stone campfire ring with flickering amber flames & radial hearth dithering. */
   campfire: [
-    // Frame 0: tall central amber/gold tongue + left spark
+    // Frame 0: tall central amber blaze + warm radial stone dithering
     [
       '...........OO...........',
       '..........OYYO..........',
@@ -643,22 +759,22 @@ export const WORLD_OBJECT_SPRITES = {
       '.......OYYWWWWYYO.......',
       '......OOYOWWWWOYO.......',
       '......OYOOOYYYOOY.......',
-      '.....OOoOOOOOOOooO......',
-      '.....ooOOOOOOOOooo......',
-      '....KTToOOOOOOoTTK......',
-      '...KTTPPoOOOOoPPTTK.....',
-      '..KTTPPPTooooTPPPTTK....',
-      '..KKTTTTPPPPPPTTTTKK....',
-      '.KmmKTTTTTTTTTTTTKmmK...',
-      'KMmmMKTTPPPPPPTTKMmmMK..',
-      'KmnnmKKTTTTTTTTKKmnnmK..',
-      '.KnnKKMmmmKKmmmMKKnnK...',
-      '..KKKmnnnmKKmnnnmKKK....',
-      '.....KnnnKKKKnnnK.......',
-      '......KKKKKKKKKK........',
-      '........................',
+      '.....OOROOOOOOOOrO......',
+      '.....rrOOOOOOOOrrr......',
+      '....KTtOOOOOOOOOtTK.....',
+      '...KTtPPROOOOORPPtTK....',
+      '..KTtPPPTOOOOOTPPPtTK...',
+      '..KKttttPPPPPPPPttttKK..',
+      '.rmmKttttttttttttttKmmr.',
+      'rMmmMKttPPPPPPPPttKMmmMr',
+      'KMmmMKmttttttttttmKMmmMK',
+      '.rMmKKMmMmKKmMmMKKmMr...',
+      '..OrKmnmmmKKmmmnmKrO....',
+      '...r.KmmmKKKKmmmK.r.....',
+      '....r.KKKKKKKKKK.r......',
+      '......O..r..r..O........',
     ],
-    // Frame 1: flickering left lean + right ember spark
+    // Frame 1: flickering left lean + right spark
     [
       '.........OO.............',
       '........OYYO............',
@@ -670,20 +786,20 @@ export const WORLD_OBJECT_SPRITES = {
       '......OYOWWWWWOYO.......',
       '.....OOYOWWWWWOYYO......',
       '.....OYYOOYYYYOOOY......',
-      '.....OooOOOOOOOooO......',
-      '....KooOOOOOOOOoooK.....',
-      '....KTToOOOOOOoTTK......',
-      '...KTTPPoOOOOoPPTTK.....',
-      '..KTTPPPTooooTPPPTTK....',
-      '..KKTTTTPPPPPPTTTTKK....',
-      '.KmmKTTTTTTTTTTTTKmmK...',
-      'KMmmMKTTPPPPPPTTKMmmMK..',
-      'KmnnmKKTTTTTTTTKKmnnmK..',
-      '.KnnKKMmmmKKmmmMKKnnK...',
-      '..KKKmnnnmKKmnnnmKKK....',
-      '.....KnnnKKKKnnnK.......',
-      '......KKKKKKKKKK........',
-      '........................',
+      '.....OOrOOOOOOOrrO......',
+      '....rrrOOOOOOOOrrr......',
+      '....KTtOOOOOOOOOtTK.....',
+      '...KTtPPROOOOORPPtTK....',
+      '..KTtPPPTOOOOOTPPPtTK...',
+      '..KKttttPPPPPPPPttttKK..',
+      '.rmmKttttttttttttttKmmr.',
+      'rMmmMKttPPPPPPPPttKMmmMr',
+      'KMmmMKmttttttttttmKMmmMK',
+      '.rMmKKMmMmKKmMmMKKmMr...',
+      '..OrKmnmmmKKmmmnmKrO....',
+      '...r.KmmmKKKKmmmK.r.....',
+      '....r.KKKKKKKKKK.r......',
+      '.....O...r..r...O.......',
     ],
     // Frame 2: flickering right flare + dual sparks
     [
@@ -697,131 +813,670 @@ export const WORLD_OBJECT_SPRITES = {
       '.......OOYWWWWWYYO......',
       '......OOYOWWWWWOYOO.....',
       '......OYOOOYYYYOOYY.....',
-      '.....OOoOOOOOOOooOO.....',
-      '.....ooOOOOOOOOoooK.....',
-      '....KTToOOOOOOoTTK......',
-      '...KTTPPoOOOOoPPTTK.....',
-      '..KTTPPPTooooTPPPTTK....',
-      '..KKTTTTPPPPPPTTTTKK....',
-      '.KmmKTTTTTTTTTTTTKmmK...',
-      'KMmmMKTTPPPPPPTTKMmmMK..',
-      'KmnnmKKTTTTTTTTKKmnnmK..',
-      '.KnnKKMmmmKKmmmMKKnnK...',
-      '..KKKmnnnmKKmnnnmKKK....',
-      '.....KnnnKKKKnnnK.......',
-      '......KKKKKKKKKK........',
+      '.....OOROOOOOOOOrOO.....',
+      '.....rrOOOOOOOOrrrr.....',
+      '....KTtOOOOOOOOOtTK.....',
+      '...KTtPPROOOOORPPtTK....',
+      '..KTtPPPTOOOOOTPPPtTK...',
+      '..KKttttPPPPPPPPttttKK..',
+      '.rmmKttttttttttttttKmmr.',
+      'rMmmMKttPPPPPPPPttKMmmMr',
+      'KMmmMKmttttttttttmKMmmMK',
+      '.rMmKKMmMmKKmMmMKKmMr...',
+      '..OrKmnmmmKKmmmnmKrO....',
+      '...r.KmmmKKKKmmmK.r.....',
+      '....r.KKKKKKKKKK.r......',
+      '......O..r..r..O........',
+    ],
+    // Frame 3: warm low ember pulse + ascending spark ring
+    [
+      '....O..............O....',
+      '...........OYO..........',
+      '..........OYWYO.........',
+      '.........OOYWYOO........',
+      '........OYYWWWYYO.......',
+      '.......OOYWWWWYYO.......',
+      '.......OYOWWWWWYO.......',
+      '......OOYOWWWWOYYO......',
+      '......OYYOOYYYOOYO......',
+      '.....OOROOOOOOOOrO......',
+      '.....rrOOOOOOOOrrr......',
+      '....rrrOOOOOOOOrrrr.....',
+      '....KTtOOOOOOOOOtTK.....',
+      '...KTtPPROOOOORPPtTK....',
+      '..KTtPPPTOOOOOTPPPtTK...',
+      '..KKttttPPPPPPPPttttKK..',
+      '.rmmKttttttttttttttKmmr.',
+      'rMmmMKttPPPPPPPPttKMmmMr',
+      'KMmmMKmttttttttttmKMmmMK',
+      '.rMmKKMmMmKKmMmMKKmMr...',
+      '..OrKmnmmmKKmmmnmKrO....',
+      '...r.KmmmKKKKmmmK.r.....',
+      '....r.KKKKKKKKKK.r......',
+      '.....O..r....r..O.......',
+    ],
+  ] as readonly SpriteGrid[],
+
+  /** 32x24 rustic timber lean-to shelter with hanging cooking pot & warm glowing lantern. */
+  shelter: [
+    '........KKKKKKKKKKKKKKKK........',
+    '......KKTTTTTTTTTTTTTTTTKK......',
+    '....KKPPTTTTTTTTTTTTTTTTPPKK....',
+    '..KKPPPPTTTTTTTTTTTTTTTTPPPPKK..',
+    '.KttPPPPPPPPPPPPPPPPPPPPPPPPttK.',
+    'KKKKKKKKKKKKKKKKKKKKKKKKKKKKKKKK',
+    '.KttK...K..F........K....K..KttK',
+    '.KPPK...K.F.........KYYK.K..KPPK',
+    '.KPPK...K...........KYWK.K..KPPK',
+    '.KPPK..KKK..........KOYK.K..KPPK',
+    '.KPPK.KmmmK.........KKKK.K..KPPK',
+    '.KPPK.KmmMK...KPPP..O....K..KPPK',
+    '.KPPK..KKK...KTTTTPK.....K..KPPK',
+    '.KPPK..OYO..KTTTTTTPK....K..KPPK',
+    '.KPPK..rOr..KPPPPPPPK....K..KPPK',
+    '.KPPK..KKK..KKKKKKKKK....K..KPPK',
+    '.KPPK....................K..KPPK',
+    '.KttK..rRRRRRRRRRRRrrrr..K..KttK',
+    '.KttK..rOYRRRRRRRRRRYOr..K..KttK',
+    '.KmmK..rrrrrrrrrrrrrrrr..K..KmmK',
+    '.KMmK....................K..KMmK',
+    '.KmmK....................K..KmmK',
+    '.KKKK....................KKKKKK.',
+    '................................',
+  ] as SpriteGrid,
+
+  /** 32x24 timber-and-stone Trophy Armory Lodge at the Sanctuary clearing edge. */
+  armoryLodge: [
+    '..............KKKK..............',
+    '............KKYYYYKK............',
+    '..........KKPPYYYYPPKK..........',
+    '........KKPPPPYYYYPPPPKK........',
+    '......KKTTTTTTTTTTTTTTTTKK......',
+    '....KKPPTTTTTTTTTTTTTTTTPPKK....',
+    '..KKPPPPPPPPPPPPPPPPPPPPPPPPKK..',
+    '.KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.',
+    '.KttKPPPPPPPKYYYYYYKPPPPPPPKttK.',
+    '.KPPKPPTTTTPKYRRRRYKPTTTTPPKPPK.',
+    '.KPPKPYYYYPPKYRYYRYKPPYYYYPKPPK.',
+    '.KPPKPYWWYPPKYYYYYYKPPYWWYPKPPK.',
+    '.KPPKPYOOYPPKKKKKKKKPPYOOYPKPPK.',
+    '.KPPKPKKKKPPKttPPttKPPKKKKPKPPK.',
+    '.KMMKMMMMMMMKtPPPPtKMMMMMMMKMMK.',
+    '.KMmKMmmmmmmKtPYYPtKmmmmmmMKmMK.',
+    '.KMmKMmmMMmmKtPPPPtKmmMMmmMKmMK.',
+    '.KmmKmMMMMMmKtPPPPtKmMMMMMmKmmK.',
+    '.KmmKmmmmmmmKttPPttKmmmmmmmKmmK.',
+    '.KMmKMMmmmMMKKKKKKKKMMmmmMMKmMK.',
+    '.KmmKmmmmmmmmmmmmmmmmmmmmmmKmmK.',
+    '.KKKKKKKKKKKKKKKKKKKKKKKKKKKKKK.',
+    '..r..O....................O..r..',
+    '................................',
+  ] as SpriteGrid,
+
+  /** 3-frame 24x24 pulsating techno-organic dimensional portal (shared base). */
+  portalAlien: [
+    // Frame 0
+    [
+      '.......KKAAAAAACK.......',
+      '.....KKAAccccccAAKK.....',
+      '....KAmAAccWWccAAmAK....',
+      '...KmmAccCCCCCCccAmmK...',
+      '..KmMAcCCAAWWAAcCCAMmK..',
+      '..KmAcCAcCCCCCCcACcAmK..',
+      '.KmMcCAAcCCWWCCcAACcMmK.',
+      '.KmAcCAccCCCCCCccACcAmK.',
+      '.KmAcCAcCCcWWcCCCACcAmK.',
+      '.KmAcCAcCCcWWcCCCACcAmK.',
+      '.KmMcCAAcCCCCCCcAACcMmK.',
+      '..KmAcCAcCCWWCCcACcAmK..',
+      '..KmMAcCCAAAAAAcCCAMmK..',
+      '...KmmAccCCCCCCccAmmK...',
+      '...KmmMAAccccccAAMmmK...',
+      '....KmMMAAAAAAAAAMmK....',
+      '....KmmEEEEEEEEEEmmK....',
+      '...KMmmEEccccccEEmmMK...',
+      '..KMMmmEEEEEEEEEEmmMMK..',
+      '..KmmmmmmmmmmmmmmmmmmK..',
+      '...KKKKKKKKKKKKKKKKKK...',
+      '........................',
+      '........................',
+      '........................',
+    ],
+    // Frame 1
+    [
+      '......KKcAAAAAACKK......',
+      '.....KAccWWWWWWccAK.....',
+      '....KAmAcCCCCCCcAmAK....',
+      '...KmmACcAAWWAAcCAmmK...',
+      '..KmMAcCAcCCCCcACcAMmK..',
+      '..KmAcCAcCcWWcCcACcAmK..',
+      '.KmMcCAccCWWWWCccACcMmK.',
+      '.KmAcCAcCCWWWWCCCACcAmK.',
+      '.KmAcCAcCCcWWcCCCACcAmK.',
+      '.KmAcCAcCCWWWWCCCACcAmK.',
+      '.KmMcCAccCWWWWCccACcMmK.',
+      '..KmAcCAcCcWWcCcACcAmK..',
+      '..KmMAcCAcCCCCcACcAMmK..',
+      '...KmmACcAAAAAAcCAmmK...',
+      '...KmmMAccCCCCccAMmmK...',
+      '....KmMMAAAAAAAAAMmK....',
+      '....KmmEEccccccEEmmK....',
+      '...KMmmEEccWWccEEmmMK...',
+      '..KMMmmEEEEEEEEEEmmMMK..',
+      '..KmmmmmmmmmmmmmmmmmmK..',
+      '...KKKKKKKKKKKKKKKKKK...',
+      '........................',
+      '........................',
+      '........................',
+    ],
+    // Frame 2
+    [
+      '.......KKcCCCCcKK.......',
+      '.....KKAAcCCCCcAAKK.....',
+      '....KAmAAcWWWWcAAmAK....',
+      '...KmmAccCCCCCCccAmmK...',
+      '..KmMAcCCcAAAAcCCCAMmK..',
+      '..KmAcCAcCCCCCCcACcAmK..',
+      '.KmMcCAcCCcWWcCCCACcMmK.',
+      '.KmAcCAcCCWWWWCCCACcAmK.',
+      '.KmAcCAccWWWWWWccACcAmK.',
+      '.KmAcCAcCCWWWWCCCACcAmK.',
+      '.KmMcCAcCCcWWcCCCACcMmK.',
+      '..KmAcCAcCCCCCCcACcAmK..',
+      '..KmMAcCCcAAAAcCCCAMmK..',
+      '...KmmAccCCCCCCccAmmK...',
+      '...KmmMAAccWWccAAMmmK...',
+      '....KmMMAAAAAAAAAMmK....',
+      '....KmmEEEEEEEEEEmmK....',
+      '...KMmmEECCCCCCEEmmMK...',
+      '..KMMmmEEEEEEEEEEmmMMK..',
+      '..KmmmmmmmmmmmmmmmmmmK..',
+      '...KKKKKKKKKKKKKKKKKK...',
+      '........................',
+      '........................',
       '........................',
     ],
   ] as readonly SpriteGrid[],
 
+  /** Per-room themed 3-frame 24x24 alien portal variants for Sanctuary perimeter gates. */
+  portalByRoom: {
+    cyber_chasm: [
+      [
+        '.......KKAAAAAACK.......',
+        '.....KKAAcAAAAcAAKK.....',
+        '....KAmAAcWWWWcAAmAK....',
+        '...KmmAccAAAAAAccAmmK...',
+        '..KmMAcCAAcWWcAAACAMmK..',
+        '..KmAcCAcAAAAAAcACcAmK..',
+        '.KmMcCAAcAAWWAAcAACcMmK.',
+        '.KmAcCAccCCCCCCccACcAmK.',
+        '.KmAcCAcCCcWWcCCCACcAmK.',
+        '.KmAcCAcCCcWWcCCCACcAmK.',
+        '.KmMcCAAcCCCCCCcAACcMmK.',
+        '..KmAcCAcAAWWAAcACcAmK..',
+        '..KmMAcCCAAAAAAcCCAMmK..',
+        '...KmmAccAAAAAAccAmmK...',
+        '...KmmMAAcAAAAcAAMmmK...',
+        '....KmMMAAAAAAAAAMmK....',
+        '....KmmAAccccccAAmmK....',
+        '...KMmmAAccccccAAmmMK...',
+        '..KMMmmAAAAAAAAAAmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '......KKcAAAAAACKK......',
+        '.....KAAcWWWWWWcAAK.....',
+        '....KAmAcAAAAAAcAmAK....',
+        '...KmmACcAAWWAAcCAmmK...',
+        '..KmMAcCAcCCCCcACcAMmK..',
+        '..KmAcCAcCcWWcCcACcAmK..',
+        '.KmMcCAccAWWWWAAAACcMmK.',
+        '.KmAcCAcAAWWWWAAAACcAmK.',
+        '.KmAcCAcCCcWWcCCCACcAmK.',
+        '.KmAcCAcAAWWWWAAAACcAmK.',
+        '.KmMcCAccAWWWWAAAACcMmK.',
+        '..KmAcCAcCcWWcCcACcAmK..',
+        '..KmMAcCAcCCCCcACcAMmK..',
+        '...KmmACcAAAAAAcCAmmK...',
+        '...KmmMAccAAAAccAMmmK...',
+        '....KmMMAAAAAAAAAMmK....',
+        '....KmmAAcWWWWcAAmmK....',
+        '...KMmmAAccccccAAmmMK...',
+        '..KMMmmAAAAAAAAAAmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '.......KKcAAAAcKK.......',
+        '.....KKAAcCCCCcAAKK.....',
+        '....KAmAAcWWWWcAAmAK....',
+        '...KmmAccCCCCCCccAmmK...',
+        '..KmMAcCCcAAAAcCCCAMmK..',
+        '..KmAcCAcCCCCCCcACcAmK..',
+        '.KmMcCAcCCcWWcCCCACcMmK.',
+        '.KmAcCAcCCWWWWCCCACcAmK.',
+        '.KmAcCAAWWWWWWAAACcAmK..',
+        '.KmAcCAcCCWWWWCCCACcAmK.',
+        '.KmMcCAcCCcWWcCCCACcMmK.',
+        '..KmAcCAcCCCCCCcACcAmK..',
+        '..KmMAcCCcAAAAcCCCAMmK..',
+        '...KmmAccCCCCCCccAmmK...',
+        '...KmmMAAccWWccAAMmmK...',
+        '....KmMMAAAAAAAAAMmK....',
+        '....KmmAAAAAAAAAAmmK....',
+        '...KMmmAACCCCCCAAmmMK...',
+        '..KMMmmAAAAAAAAAAmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+    ] as readonly SpriteGrid[],
+    bio_forge: [
+      [
+        '.......KKEEEEEEEK.......',
+        '.....KKEEOOOOOOEEKK.....',
+        '....KPtEEOWWWWOEEtPK....',
+        '...KttEccEEEEEEccEttK...',
+        '..KtPEcEEOOYYOOcEEEPtK..',
+        '..KtEcEEcEEEEEEcEEcEtK..',
+        '.KtMEcEEcEEWWEEcEEcEMtK.',
+        '.KtEcEEccEEEEEEccEEcEtK.',
+        '.KtEcEEcEEcWWcEEEEcEtK..',
+        '.KtEcEEcEEcWWcEEEEcEtK..',
+        '.KtMEcEEcEEEEEEcEEcEMtK.',
+        '..KtEcEEcEEWWEEcEEcEtK..',
+        '..KtPEcEEOOOOOOcEEEPtK..',
+        '...KttEccEEEEEEccEttK...',
+        '...KttPEEOOOOOOEEPtTK...',
+        '....KtPPEEEEEEEEEPPK....',
+        '....KttOOOOOOOOOOttK....',
+        '...KPttOOYYYYYYOOttPK...',
+        '..KPPttOOOOOOOOOOttPPK..',
+        '..KttttttttttttttttttK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '......KKOEEEEEEOKK......',
+        '.....KEEOWWWWWWOEEK.....',
+        '....KPtEcEEEEEEcEtPK....',
+        '...KttECcEEYYEEcCEttK...',
+        '..KtPEcEEcEEEEcEEcEPtK..',
+        '..KtEcEEcEcWWcEcEEcEtK..',
+        '.KtMEcEccEWWWWOccEEcEMtK',
+        '.KtEcEEcEEWWWWEEEEcEtK..',
+        '.KtEcEEcEEcWWcEEEEcEtK..',
+        '.KtEcEEcEEWWWWEEEEcEtK..',
+        '.KtMEcEccEWWWWOccEEcEMtK',
+        '..KtEcEEcEcWWcEcEEcEtK..',
+        '..KtPEcEEcEEEEcEEcEPtK..',
+        '...KttECcEEEEEEcCEttK...',
+        '...KttPEccEEEEccEPttK...',
+        '....KtPPEEEEEEEEEPPK....',
+        '....KttOOYYYYYYOOttK....',
+        '...KPttOOYYWWYYOOttPK...',
+        '..KPPttOOOOOOOOOOttPPK..',
+        '..KttttttttttttttttttK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '.......KKOEEEEOKK.......',
+        '.....KKEEOYYYYOEEKK.....',
+        '....KPtEEOWWWWOOEtPK....',
+        '...KttEccEEEEEEccEttK...',
+        '..KtPEcEEcOOOOcEEEPtK...',
+        '..KtEcEEcEEEEEEcEEcEtK..',
+        '.KtMEcEEcEEWWEEcEEcEMtK.',
+        '.KtEcEEcEEWWWWEEEEcEtK..',
+        '.KtEcEEccWWWWWWccEEcEtK.',
+        '.KtEcEEcEEWWWWEEEEcEtK..',
+        '.KtMEcEEcEEWWEEcEEcEMtK.',
+        '..KtEcEEcEEEEEEcEEcEtK..',
+        '..KtPEcEEcOOOOcEEEPtK...',
+        '...KttEccEEEEEEccEttK...',
+        '...KttPEEccWWccEEPttK...',
+        '....KtPPEEEEEEEEEPPK....',
+        '....KttOOOOOOOOOOttK....',
+        '...KPttOOEEEEEEOOttPK...',
+        '..KPPttOOOOOOOOOOttPPK..',
+        '..KttttttttttttttttttK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+    ] as readonly SpriteGrid[],
+    signal_beacon: [
+      [
+        '.......KKCCCCCCCK.......',
+        '.....KKCCccccccCCKK.....',
+        '....KMnCCccWWccCCnMK....',
+        '...KmnCccCCCCCCccCnmK...',
+        '..KmNCcCCCCWWCCCCcCNmK..',
+        '..KmCcCCcCCCCCCcCCcCmK..',
+        '.KmMCcCCcCCWWCCcCCcCMmK.',
+        '.KmCcCCccCCCCCCccCCcCmK.',
+        '.KmCcCCcCCcWWcCCCCcCmK..',
+        '.KmCcCCcCCcWWcCCCCcCmK..',
+        '.KmMCcCCcCCCCCCcCCcCMmK.',
+        '..KmCcCCcCCWWCCcCCcCmK..',
+        '..KmNCcCCCCWWCCCCcCNmK..',
+        '...KmnCccCCCCCCccCnmK...',
+        '...KmnMCCccccccCCMnMK...',
+        '....KmMMCCCCCCCCCMmK....',
+        '....KmmNNNNNNNNNNmmK....',
+        '...KMmmNNccccccNNmmMK...',
+        '..KMMmmNNNNNNNNNNmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '......KKcCCCCCCcKK......',
+        '.....KCCcWWWWWWcCCK.....',
+        '....KMnCcCCCCCCcCnMK....',
+        '...KmnCCcCCWWCCcCCnmK...',
+        '..KmNCcCCcCCCCcCCcCNmK..',
+        '..KmCcCCcCcWWcCcCCcCmK..',
+        '.KmMCcCccCWWWWCccCCcCMmK',
+        '.KmCcCCcCCWWWWCCCCcCmK..',
+        '.KmCcCCcCCcWWcCCCCcCmK..',
+        '.KmCcCCcCCWWWWCCCCcCmK..',
+        '.KmMCcCccCWWWWCccCCcCMmK',
+        '..KmCcCCcCcWWcCcCCcCmK..',
+        '..KmNCcCCcCCCCcCCcCNmK..',
+        '...KmnCCcCCCCCCcCCnmK...',
+        '...KmnMCccCCCCccCMnMK...',
+        '....KmMMCCCCCCCCCMmK....',
+        '....KmmNNccccccNNmmK....',
+        '...KMmmNNccWWccNNmmMK...',
+        '..KMMmmNNNNNNNNNNmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+      [
+        '.......KKcCCCCcKK.......',
+        '.....KKCCcWWWWcCCKK.....',
+        '....KMnCCcWWWWcCCnMK....',
+        '...KmnCccCCCCCCccCnmK...',
+        '..KmNCcCCcCCCCcCCcCNmK..',
+        '..KmCcCCcCCCCCCcCCcCmK..',
+        '.KmMCcCCcCCWWCCcCCcCMmK.',
+        '.KmCcCCcCCWWWWCCCCcCmK..',
+        '.KmCcCCccWWWWWWccCCcCmK.',
+        '.KmCcCCcCCWWWWCCCCcCmK..',
+        '.KmMCcCCcCCWWCCcCCcCMmK.',
+        '..KmCcCCcCCCCCCcCCcCmK..',
+        '..KmNCcCCcCCCCcCCcCNmK..',
+        '...KmnCccCCCCCCccCnmK...',
+        '...KmnMCCccWWccCCMnMK...',
+        '....KmMMCCCCCCCCCMmK....',
+        '....KmmNNNNNNNNNNmmK....',
+        '...KMmmNNCCCCCCNNmmMK...',
+        '..KMMmmNNNNNNNNNNmmMMK..',
+        '..KmmmmmmmmmmmmmmmmmmK..',
+        '...KKKKKKKKKKKKKKKKKK...',
+        '........................',
+        '........................',
+        '........................',
+      ],
+    ] as readonly SpriteGrid[],
+  },
+
+  /** 3-frame 24x24 prominent golden/cyan return warp vortex (`⇄ Campfire Sanctuary`). */
+  returnPortal: [
+    [
+      '.......KKYYYYYYKK.......',
+      '.....KKYYccccccYYKK.....',
+      '....KYYOOcWWWWcOOYYK....',
+      '...KYYOccCCCCCCccOYYK...',
+      '..KYOcCCCYYWWYYCCCcOYK..',
+      '..KYOcCcCCCCCCCCcCcOYK..',
+      '.KYOCCCcCCWWWWCCcCCCOYK.',
+      '.KYOCCCcCWWccWWCcCCCOYK.',
+      '.KYOCCCcCWWccWWCcCCCOYK.',
+      '.KYOCCCcCCWWWWCCcCCCOYK.',
+      '..KYOcCcCCCCCCCCcCcOYK..',
+      '..KYOcCCCYYWWYYCCCcOYK..',
+      '...KYYOccCCCCCCccOYYK...',
+      '....KYYOOcWWWWcOOYYK....',
+      '.....KKYYccccccYYKK.....',
+      '......KmmYYYYYYmmK......',
+      '.....KMmmOOOOOOmmMK.....',
+      '....KMMmmYYYYYYmmMMK....',
+      '....KmmmmmmmmmmmmmmK....',
+      '.....KKKKKKKKKKKKKK.....',
+      '........................',
+      '........................',
+      '........................',
+      '........................',
+    ],
+    [
+      '......KKcYYYYYYcKK......',
+      '.....KYOYWWWWWWYOYK.....',
+      '....KYOcCCCCCCCCcOYK....',
+      '...KYYCcYYWWWWYYcCYYK...',
+      '..KYOCCcCCCCCCCCcCCOYK..',
+      '..KYOCcCCcWWWWcCCcCOYK..',
+      '.KYOCCcCCWWWWWWCCcCCOYK.',
+      '.KYOCCcCCWWccWWCCcCCOYK.',
+      '.KYOCCcCCWWWWWWCCcCCOYK.',
+      '.KYOCCcCCcWWWWcCCcCCOYK.',
+      '..KYOCcCCCCCCCCCCcCOYK..',
+      '..KYOCCcYYYYYYYYcCCOYK..',
+      '...KYYCcCCCCCCCCcCYYK...',
+      '....KYOcCCCCCCCCcOYK....',
+      '.....KYOYccccccYOYK.....',
+      '......KmmYYYYYYmmK......',
+      '.....KMmmYYWWYYmmMK.....',
+      '....KMMmmYYYYYYmmMMK....',
+      '....KmmmmmmmmmmmmmmK....',
+      '.....KKKKKKKKKKKKKK.....',
+      '........................',
+      '........................',
+      '........................',
+      '........................',
+    ],
+    [
+      '.......KKcYYYYcKK.......',
+      '.....KKYYcCCCCcYYKK.....',
+      '....KYYOOcWWWWcOOYYK....',
+      '...KYYCccCCCCCCccCYYK...',
+      '..KYOcCCCcYYYYcCCCcOYK..',
+      '..KYOcCCcCCCCCCcCCcOYK..',
+      '.KYOCCCcCCcWWcCCcCCCOYK.',
+      '.KYOCCCccWWWWWWccCCCOYK.',
+      '.KYOCCCcCCWWWWCCcCCCOYK.',
+      '.KYOCCCcCCcWWcCCcCCCOYK.',
+      '..KYOcCCcCCCCCCcCCcOYK..',
+      '..KYOcCCCcYYYYcCCCcOYK..',
+      '...KYYCccCCCCCCccCYYK...',
+      '....KYYOOccWWccOOYYK....',
+      '.....KKYYccccccYYKK.....',
+      '......KmmYYYYYYmmK......',
+      '.....KMmmOOOOOOmmMK.....',
+      '....KMMmmYYYYYYmmMMK....',
+      '....KmmmmmmmmmmmmmmK....',
+      '.....KKKKKKKKKKKKKK.....',
+      '........................',
+      '........................',
+      '........................',
+      '........................',
+    ],
+  ] as readonly SpriteGrid[],
+
+  /** 24x24 Cyber-Chasm Obsidian Era Monolith with purple & cyan circuit runes. */
   eraObelisk: [
     '...........KK...........',
-    '..........KaaK..........',
-    '.........KaAAaK.........',
+    '..........KccK..........',
+    '.........KcAAcK.........',
     '..........KAAK..........',
     '..........KKKK..........',
-    '.........KMnnMK.........',
-    '........KMnnnnMK........',
-    '........KmnAAnMK........',
-    '.......KmnAAAAmnK.......',
-    '.......KmnnaannmK.......',
-    '.......KmnnAAnnmK.......',
-    '......KmnnAAAAmnmK......',
-    '......KmnAAnnAAmmK......',
-    '......KmnnAAnnnmmK......',
-    '.....KmnnnAAAAmmmnK.....',
-    '.....KmnnAAnnnAmmnK.....',
-    '.....KmnnnaaaanmmnK.....',
-    '....KMnnnnnAAnnnnnMK....',
+    '.........KMmmMK.........',
+    '........KMmmmmMK........',
+    '........KmCAACKm........',
+    '.......KmCAAACmmK.......',
+    '.......KmmmAAmmmK.......',
+    '.......KmmCAACmmK.......',
+    '......KmmAAAAACmmK......',
+    '......KmAAmCCmAAmK......',
+    '......KmmAAmmAAmmK......',
+    '.....KmmmAAAAAAmmmK.....',
+    '.....KmmCAmnnmACmmK.....',
+    '.....KmmmccccccmmmK.....',
+    '....KMmmmmmAAmmmmmMK....',
     '....KMMmmmmmmmmmmMMK....',
-    '...KMnnMmmmAAmmmMnnMK...',
-    '..KMMnnnnnAAAAmnnnnMMK..',
-    '..KnnnnnnnnnnnnnnnnnnK..',
+    '...KMmmMmmmAAmmmMmmMK...',
+    '..KMMmmmmmAAAAmmmmMMMK..',
+    '..KmmmmmmmmmmmmmmmmmmK..',
     '..KKKKKKKKKKKKKKKKKKKK..',
     '........................',
   ] as SpriteGrid,
 
-  relicPedestal: [
-    '...........KK...........',
-    '..........KccK..........',
-    '.........KcCCcK.........',
-    '........KcCWYCcK........',
-    '.........KcCCcK.........',
-    '..........KccK..........',
-    '...........KK...........',
-    '......o..........o......',
-    '.....KooKKKKKKKKooK.....',
-    '....KoooPPPPPPPPoooK....',
-    '....KoKKYYYYYYYYKKoK....',
-    '.....KooPPPPPPPPooK.....',
-    '......KooommmmoooK......',
-    '......KopmOOOOmpOK......',
-    '.....KKopmoYYompoKK.....',
-    '.....KooomOOOOmoooK.....',
-    '....KooopmoOOompoooK....',
-    '....KoppmooooooopppK....',
-    '...KKppmoOOOOOOomppKK...',
-    '..KMMmmmoOYYYYOommmMMK..',
-    '..KmnnnooOOOOOOoonnnmK..',
-    '.KnnnnnnnnnnnnnnnnnnnnK.',
+  /** 24x24 Bio-Forge alien biomechanical glass containment pod. */
+  bioPod: [
+    '.......KKKKKKKKKK.......',
+    '......KmMMMMMMMMmK......',
+    '.....KmmOOOOOOOOmmK.....',
+    '.....KmKKKKKKKKKKmK.....',
+    '....KnNCcCCCCCCcCNnK....',
+    '....KnNCcEEEEEEcCNnK....',
+    '....KnNCEEEWWEEECNnK....',
+    '....KnNCEEWEEWEECNnK....',
+    '...EKnNCEEEEEEEECNnKE...',
+    '..EEKnNCEEEccEEECNnKEE..',
+    '..E.KnNCEEcEEcEECNnK.E..',
+    '....KnNCcEEEEEEcCNnK....',
+    '....KnNCcCCCCCCcCNnK....',
+    '.....KmKKKKKKKKKKmK.....',
+    '....KmmOOOOOOOOOOmmK....',
+    '....KmPPTTTTTTTTPPmK....',
+    '...KmPPOOOYYYYOOOPPmK...',
+    '...KmPPOOOOOOOOOOPPmK...',
+    '..KMmPPPPOOOOOOOOmmMK...',
+    '..KMmmmmOOOOOOOOOmmmMK..',
+    '..KmmmmmOOOOOOOOOmmmmK..',
+    '.KmmmmmmmmmmmmmmmmmmmmK.',
     '.KKKKKKKKKKKKKKKKKKKKKK.',
     '........................',
   ] as SpriteGrid,
 
-  trophyPedestal: [
-    '........KKKKKKKK........',
-    '.......KYYYYYYYYK.......',
-    '......KYYWWYYWWYYK......',
-    '......KYYYyyyyYYYK......',
-    '.......KYYyYYyYYK.......',
-    '......KKYYYYYYYYKK......',
-    '.....KYKYYYYYYYYKYK.....',
-    '.....KYKYYYRRYYYKYK.....',
-    '......KKYYYYYYYYKK......',
-    '........KKYYYYKK........',
-    '.........KYYYYK.........',
-    '........KYYyyYYK........',
-    '......KKYYYYYYYYKK......',
-    '.....KYYYyyyyyyYYYK.....',
-    '....KKKKKKKKKKKKKKKK....',
-    '....KMMmmmmmmmmmmMMK....',
-    '...KMmnnRRRRRRRRnnmMK...',
-    '...KmnnnRRYYYYYRnnnmK...',
-    '..KMmnnnRRRRRRRRnnnmMK..',
-    '..KmnnnnnnnnnnnnnnnnnK..',
-    '.KMmmmmmmmmmmmmmmmmmmMK.',
-    '.KnnnnnnnnnnnnnnnnnnnnK.',
-    '.KKKKKKKKKKKKKKKKKKKKKK.',
-    '........................',
-  ] as SpriteGrid,
-
-  beaconTower: [
+  /** 24x24 Signal Beacon high-orbit alien radio observatory dish. */
+  beaconDish: [
     '...........cc...........',
     '..........cWWc..........',
     '.........CcCCcC.........',
     '..........KCCK..........',
-    '........KKKccKKK........',
-    '.......KCCccccCCK.......',
-    '......KCCcWWWWcCCK......',
-    '......KCCcCCCCcCCK......',
-    '.......KKNCCCCNKK.......',
-    '........KMNccNMK........',
-    '.........KMnnMK.........',
-    '........KMnCCnMK........',
-    '........KMnnnnMK........',
-    '.......KMnMccMnMK.......',
-    '.......KMnnCCnnMK.......',
-    '......KMnMnCCnMnMK......',
-    '......KMnnnnnnnnMK......',
-    '.....KMnnMCCCCMnnMK.....',
-    '.....KMnnnnnnnnnnMK.....',
-    '....KMMnnCCCCCCnnMMK....',
-    '...KMnnnnnnnnnnnnnnMK...',
+    '......KKKKKccKKKKK......',
+    '....KKMMMMcWWcMMMMKK....',
+    '...KMMmmmmCCCCmmmmMMK...',
+    '..KMmmCCCcWWWWcCCCmmMK..',
+    '..KMmCCccCCCCCCccCCmMK..',
+    '...KMmmmmCCCCCCmmmmMK...',
+    '....KKMmmmmmmmmmmMKK....',
+    '......KKKKMnnMKKKK......',
+    '.........KMmmMK.........',
+    '........KMmCCmMK........',
+    '........KMmmmmMK........',
+    '.......KMmMccMmMK.......',
+    '.......KMmmCCmmMK.......',
+    '......KMmMmCCmMmMK......',
+    '......KMmmmmmmmmMK......',
+    '....KKMmmmCCCCmmmMKK....',
+    '...KMmmmmmmmmmmmmmmMK...',
     '..KMMmmmmNNNNNNmmmmMMK..',
     '..KKKKKKKKKKKKKKKKKKKK..',
     '........................',
   ] as SpriteGrid,
 
+  /** 24x16 woven crimson & amber hearth mat placed under The Dog. */
+  wovenMat: [
+    '........................',
+    '..rrrrrrrrrrrrrrrrrrrr..',
+    '.rRRRRRRRRRRRRRRRRRRRRr.',
+    'FrROYYORROYYYYORROYYORFr',
+    'FrROYYORROYYYYORROYYORFr',
+    '.rRROORRROYYYYORRROORRr.',
+    'FrROYYORROYYYYORROYYORFr',
+    'FrROYYORROYYYYORROYYORFr',
+    '.rRROORRROYYYYORRROORRr.',
+    'FrROYYORROYYYYORROYYORFr',
+    'FrROYYORROYYYYORROYYORFr',
+    '.rRRRRRRRRRRRRRRRRRRRRr.',
+    '..rrrrrrrrrrrrrrrrrrrr..',
+    '........................',
+    '........................',
+    '........................',
+  ] as SpriteGrid,
+
+  /** 16x24 campfire comms radio antenna beside RASS hologram. */
+  commsAntenna: [
+    '.......cW.......',
+    '......cCCc......',
+    '.......KK.......',
+    '.......MK.......',
+    '......KMMK......',
+    '.......MK.......',
+    '....KKKMMKKK....',
+    '...KCCCMMCCCK...',
+    '.......MK.......',
+    '......KMMK......',
+    '.....KMmmMK.....',
+    '......KMMK......',
+    '.....KMCCMK.....',
+    '.....KMmmMK.....',
+    '....KMmmmmMK....',
+    '....KMmCCmMK....',
+    '...KMmmmmmmMK...',
+    '...KMmMnnMmMK...',
+    '..KMmmmmmmmmMK..',
+    '..KMmCCCCCCmMK..',
+    '..KmmmmmmmmmmK..',
+    '..KKKKKKKKKKKK..',
+    '................',
+    '................',
+  ] as SpriteGrid,
+
+  /** 24x16 carved timber bench where Ms. Devil lounges. */
+  timberBench: [
+    '........................',
+    '........................',
+    '..KKKKKKKKKKKKKKKKKKKK..',
+    '.KTTTTTTTTTTTTTTTTTTTTK.',
+    '.KPPPPPPPPPPPPPPPPPPPPK.',
+    '..KKKKKKKKKKKKKKKKKKKK..',
+    '.KTTTTTTTTTTTTTTTTTTTTK.',
+    '.KPPYYPPPPPPPPPPPPYYPPK.',
+    '.KPPPPPPPPPPPPPPPPPPPPK.',
+    '..KttttttttttttttttttK..',
+    '..KttK............KttK..',
+    '..KttK............KttK..',
+    '..KKK..............KKK..',
+    '........................',
+    '........................',
+    '........................',
+  ] as SpriteGrid,
+
+  /** 16x16 Mimic Roast Chest (closed & open). */
   roastChest: {
     closed: [
       '................',
@@ -861,9 +1516,10 @@ export const WORLD_OBJECT_SPRITES = {
     ] as SpriteGrid,
   },
 
+  /** 12x12 pixel heart bubble for petting The Dog. */
   heart: [
     '..KKK..KKK..',
-    '.KRRRKkRRRK.',
+    '.KRRRKKRRRK.',
     'KRWRRRRRRRRK',
     'KRRRRRRRRRRK',
     'KRRRRRRRRRRK',
@@ -897,7 +1553,8 @@ export function drawMatrixFrame(
     for (let col = 0; col < line.length; col += 1) {
       const code = line[col];
       if (code === '.' || code === ' ') continue;
-      const color = palette[code];
+      // Support lowercase 'k' as obsidian outline fallback if referenced by legacy callers.
+      const color = palette[code] ?? (code === 'k' ? palette.K : undefined);
       if (!color) continue;
       ctx.fillStyle = color;
       ctx.fillRect(
@@ -966,69 +1623,95 @@ function canvasToTexture<T>(
 }
 
 /**
- * Build all 16x16 and 24x24 procedural sprite frames onto offscreen canvases and
- * optionally wrap them in nearest-neighbor PixiJS Textures via `TextureClass`.
+ * Build all procedural sprite frames onto offscreen canvases and optionally wrap
+ * them in nearest-neighbor PixiJS Textures via `TextureClass`.
  * Passing `null`/`undefined` returns raw offscreen canvases directly for Canvas2D fallback.
  */
 export function createSpriteTextureSet<T = HTMLCanvasElement>(
   TextureClass?: TextureClassLike<T> | null,
-  options: SpriteBuildOptions = {},
+  opts: SpriteBuildOptions = {},
 ): SpriteTextureSet<T> {
-  const pixelSize = options.pixelSize ?? 3;
-  // Slightly tighter pixel scale (2x -> 48x48px) for 24x24 monuments so world proportions stay balanced.
+  const pixelSize = opts.pixelSize ?? 3;
+  // Slightly tighter pixel scale (2x) for 24x24 & 32x24 monuments so world proportions stay balanced.
   const monumentScale = Math.max(2, Math.round(pixelSize * 0.75));
 
   const makePair = (grid: SpriteGrid, scale = pixelSize) => {
     const canvas = renderMatrixToCanvas(grid, SPRITE_PALETTE, scale);
-    const texture = canvasToTexture(canvas, TextureClass, options.CanvasSourceClass);
+    const texture = canvasToTexture(canvas, TextureClass, opts.CanvasSourceClass);
     return { canvas, texture };
   };
 
-  const borisCanvases: Record<SpriteDirection, HTMLCanvasElement[]> = {
+  const borisCanvases: Record<BorisSpriteChannel, HTMLCanvasElement[]> = {
     down: [],
     up: [],
     left: [],
     right: [],
+    idleMug: [],
   };
-  const borisTextures: Record<SpriteDirection, T[]> = {
+  const borisTextures: Record<BorisSpriteChannel, T[]> = {
     down: [],
     up: [],
     left: [],
     right: [],
+    idleMug: [],
   };
 
-  for (const dir of ['down', 'up', 'left', 'right'] as const) {
-    for (const grid of BORIS_SPRITE_FRAMES[dir]) {
+  for (const channel of ['down', 'up', 'left', 'right', 'idleMug'] as const) {
+    for (const grid of BORIS_SPRITE_FRAMES[channel]) {
       const { canvas, texture } = makePair(grid, pixelSize);
-      borisCanvases[dir].push(canvas);
-      borisTextures[dir].push(texture);
+      borisCanvases[channel].push(canvas);
+      borisTextures[channel].push(texture);
     }
   }
 
-  const whiteDogPairs = WHITE_DOG_FRAMES.map((grid) => makePair(grid, pixelSize));
+  const sleepingDogPairs = SLEEPING_DOG_FRAMES.map((grid) => makePair(grid, pixelSize));
+  const dogWakePairs = DOG_WAKE_FRAMES.map((grid) => makePair(grid, pixelSize));
   const rassPairs = RASS_DRONE_FRAMES.map((grid) => makePair(grid, pixelSize));
   const devilPairs = MS_DEVIL_FRAMES.map((grid) => makePair(grid, pixelSize));
-  const campfirePairs = WORLD_OBJECT_SPRITES.campfire.map((grid) =>
+  const campfirePairs = WORLD_OBJECT_SPRITES.campfire.map((grid) => makePair(grid, monumentScale));
+  const shelterPair = makePair(WORLD_OBJECT_SPRITES.shelter, monumentScale);
+  const armoryPair = makePair(WORLD_OBJECT_SPRITES.armoryLodge, monumentScale);
+  const portalAlienPairs = WORLD_OBJECT_SPRITES.portalAlien.map((grid) =>
+    makePair(grid, monumentScale),
+  );
+  const portalByRoomPairs: Record<AlienRoomPortalId, Array<{ canvas: HTMLCanvasElement; texture: T }>> = {
+    cyber_chasm: WORLD_OBJECT_SPRITES.portalByRoom.cyber_chasm.map((g) => makePair(g, monumentScale)),
+    bio_forge: WORLD_OBJECT_SPRITES.portalByRoom.bio_forge.map((g) => makePair(g, monumentScale)),
+    signal_beacon: WORLD_OBJECT_SPRITES.portalByRoom.signal_beacon.map((g) =>
+      makePair(g, monumentScale),
+    ),
+  };
+  const returnPortalPairs = WORLD_OBJECT_SPRITES.returnPortal.map((grid) =>
     makePair(grid, monumentScale),
   );
   const obeliskPair = makePair(WORLD_OBJECT_SPRITES.eraObelisk, monumentScale);
-  const relicPair = makePair(WORLD_OBJECT_SPRITES.relicPedestal, monumentScale);
-  const trophyPair = makePair(WORLD_OBJECT_SPRITES.trophyPedestal, monumentScale);
-  const beaconPair = makePair(WORLD_OBJECT_SPRITES.beaconTower, monumentScale);
+  const bioPodPair = makePair(WORLD_OBJECT_SPRITES.bioPod, monumentScale);
+  const beaconDishPair = makePair(WORLD_OBJECT_SPRITES.beaconDish, monumentScale);
+  const wovenMatPair = makePair(WORLD_OBJECT_SPRITES.wovenMat, monumentScale);
+  const commsAntennaPair = makePair(WORLD_OBJECT_SPRITES.commsAntenna, monumentScale);
+  const timberBenchPair = makePair(WORLD_OBJECT_SPRITES.timberBench, monumentScale);
   const chestClosedPair = makePair(WORLD_OBJECT_SPRITES.roastChest.closed, pixelSize);
   const chestOpenPair = makePair(WORLD_OBJECT_SPRITES.roastChest.open, pixelSize);
   const heartPair = makePair(WORLD_OBJECT_SPRITES.heart, Math.max(2, pixelSize - 1));
 
-  debugLog('Generated procedural pixel sprite sheet', {
-    borisFrames:
+  const sleepingDogCanvases = sleepingDogPairs.map((p) => p.canvas);
+  const sleepingDogTextures = sleepingDogPairs.map((p) => p.texture);
+
+  debugLog('Generated SPEC-022 24-color procedural sprite sheet', {
+    paletteColors: Object.keys(SPRITE_PALETTE).length,
+    borisWalkFrames:
       borisCanvases.down.length +
       borisCanvases.up.length +
       borisCanvases.left.length +
       borisCanvases.right.length,
-    whiteDogFrames: whiteDogPairs.length,
+    borisIdleMugFrames: borisCanvases.idleMug.length,
+    sleepingDogFrames: sleepingDogPairs.length,
+    dogWakeFrames: dogWakePairs.length,
     rassFrames: rassPairs.length,
     msDevilFrames: devilPairs.length,
     campfireFrames: campfirePairs.length,
+    portalFrames: portalAlienPairs.length,
+    returnPortalFrames: returnPortalPairs.length,
     hasPixiTextureClass: Boolean(TextureClass),
     pixelSize,
   });
@@ -1037,15 +1720,31 @@ export function createSpriteTextureSet<T = HTMLCanvasElement>(
     pixelSize,
     canvases: {
       boris: borisCanvases,
-      whiteDog: whiteDogPairs.map((p) => p.canvas),
+      sleepingDog: sleepingDogCanvases,
+      dogWake: dogWakePairs.map((p) => p.canvas),
+      whiteDog: sleepingDogCanvases,
       rassDrone: rassPairs.map((p) => p.canvas),
       msDevil: devilPairs.map((p) => p.canvas),
       worldObjects: {
         campfire: campfirePairs.map((p) => p.canvas),
+        shelter: shelterPair.canvas,
+        armoryLodge: armoryPair.canvas,
+        portalAlien: portalAlienPairs.map((p) => p.canvas),
+        portalByRoom: {
+          cyber_chasm: portalByRoomPairs.cyber_chasm.map((p) => p.canvas),
+          bio_forge: portalByRoomPairs.bio_forge.map((p) => p.canvas),
+          signal_beacon: portalByRoomPairs.signal_beacon.map((p) => p.canvas),
+        },
+        returnPortal: returnPortalPairs.map((p) => p.canvas),
         eraObelisk: obeliskPair.canvas,
-        relicPedestal: relicPair.canvas,
-        trophyPedestal: trophyPair.canvas,
-        beaconTower: beaconPair.canvas,
+        bioPod: bioPodPair.canvas,
+        beaconDish: beaconDishPair.canvas,
+        wovenMat: wovenMatPair.canvas,
+        commsAntenna: commsAntennaPair.canvas,
+        timberBench: timberBenchPair.canvas,
+        relicPedestal: bioPodPair.canvas,
+        trophyPedestal: armoryPair.canvas,
+        beaconTower: beaconDishPair.canvas,
         roastChest: {
           closed: chestClosedPair.canvas,
           open: chestOpenPair.canvas,
@@ -1054,15 +1753,31 @@ export function createSpriteTextureSet<T = HTMLCanvasElement>(
       },
     },
     boris: borisTextures,
-    whiteDog: whiteDogPairs.map((p) => p.texture),
+    sleepingDog: sleepingDogTextures,
+    dogWake: dogWakePairs.map((p) => p.texture),
+    whiteDog: sleepingDogTextures,
     rassDrone: rassPairs.map((p) => p.texture),
     msDevil: devilPairs.map((p) => p.texture),
     worldObjects: {
       campfire: campfirePairs.map((p) => p.texture),
+      shelter: shelterPair.texture,
+      armoryLodge: armoryPair.texture,
+      portalAlien: portalAlienPairs.map((p) => p.texture),
+      portalByRoom: {
+        cyber_chasm: portalByRoomPairs.cyber_chasm.map((p) => p.texture),
+        bio_forge: portalByRoomPairs.bio_forge.map((p) => p.texture),
+        signal_beacon: portalByRoomPairs.signal_beacon.map((p) => p.texture),
+      },
+      returnPortal: returnPortalPairs.map((p) => p.texture),
       eraObelisk: obeliskPair.texture,
-      relicPedestal: relicPair.texture,
-      trophyPedestal: trophyPair.texture,
-      beaconTower: beaconPair.texture,
+      bioPod: bioPodPair.texture,
+      beaconDish: beaconDishPair.texture,
+      wovenMat: wovenMatPair.texture,
+      commsAntenna: commsAntennaPair.texture,
+      timberBench: timberBenchPair.texture,
+      relicPedestal: bioPodPair.texture,
+      trophyPedestal: armoryPair.texture,
+      beaconTower: beaconDishPair.texture,
       roastChest: {
         closed: chestClosedPair.texture,
         open: chestOpenPair.texture,
